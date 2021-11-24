@@ -1,0 +1,159 @@
+\chapter{作用域}
+
+\section{命名空间} \label{namespace}
+
+\DBox{
+  鼓励在 ``.cc`` 文件内使用匿名命名空间或 ``static`` 声明. 使用具名的命名空间时, 其名称可基于项目名或相对路径.
+  禁止使用 using 指示（using-directive）。禁止使用内联命名空间（inline namespace）。
+}
+
+\textbf{定义：}
+
+命名空间将全局作用域细分为独立的, 具名的作用域, 可有效防止全局作用域的命名冲突。
+
+\textbf{优点：}
+
+虽然类已经提供了（可嵌套的）命名轴线 (YuleFox 注: 将命名分割在不同类的作用域内), 命名空间在这基础上又封装了一层。
+
+举例来说, 两个不同项目的全局作用域都有一个类 ``Foo``, 这样在编译或运行时造成冲突. 如果每个项目将代码置于不同命名空间中,
+``project1::Foo`` 和 ``project2::Foo`` 作为不同符号自然不会冲突.
+
+内联命名空间会自动把内部的标识符放到外层作用域，比如：
+
+\begin{cppcode}
+  namespace X {
+      inline namespace Y {
+          void foo();
+        }  // namespace Y
+    }  // namespace X
+\end{cppcode}
+
+``X::Y::foo()`` 与 ``X::foo()`` 彼此可代替。内联命名空间主要用来保持跨版本的 ABI 兼容性。
+
+\textbf{缺点：}
+
+命名空间具有迷惑性, 因为它们使得区分两个相同命名所指代的定义更加困难。
+
+内联命名空间很容易令人迷惑，毕竟其内部的成员不再受其声明所在命名空间的限制。内联命名空间只在大型版本控制里有用。
+
+有时候不得不多次引用某个定义在许多嵌套命名空间里的实体，使用完整的命名空间会导致代码的冗长。
+
+在头文件中使用匿名空间导致违背 C++ 的唯一定义原则 (One Definition Rule (ODR))。
+
+\textbf{结论：}
+
+根据下文将要提到的策略合理使用命名空间。
+
+\begin{itemize}
+  \item 遵守 `命名空间命名 <naming.html#namespace-names>` 中的规则。
+  \item 像之前的几个例子中一样，在命名空间的最后注释出命名空间的名字。
+  \item 用命名空间把文件包含, `gflags <https://gflags.github.io/gflags/>` 的声明/定义, 以及类的前置声明以外的整个源文件封装起来, 以区别于其它命名空间:
+
+        % \begin{noindent}
+\begin{cppcode}
+  // .h 文件
+  namespace mynamespace {
+
+      // 所有声明都置于命名空间中
+      // 注意不要使用缩进
+  class MyClass {
+  public:
+  ...
+  void Foo();
+  };
+} // namespace mynamespace
+\end{cppcode}
+%\end{noindent}
+
+        %\begin{noindent}
+\begin{cppcode}
+// .cc 文件
+namespace mynamespace {
+
+  // 函数定义都置于命名空间中
+  void MyClass::Foo() {
+  ...
+  }
+
+} // namespace mynamespace
+\end{cppcode}
+%\end{noindent}
+
+        更复杂的 ``.cc`` 文件包含更多, 更复杂的细节, 比如 gflags 或 using 声明。
+
+        %\begin{noindent}
+\begin{cppcode}
+  #include "a.h"
+
+  DEFINE_FLAG(bool, someflag, false, "dummy flag");
+
+  namespace a {
+
+      ...code for a...// 左对齐
+
+    } // namespace a
+\end{cppcode}
+% \end{noindent}
+
+  \item 不要在命名空间 ``std`` 内声明任何东西, 包括标准库的类前置声明. 在 ``std`` 命名空间声明实体是未定义的行为，会导致如不可移植. 声明标准库下的实体, 需要包含对应的头文件。
+
+  \item 不应该使用 *using 指示* 引入整个命名空间的标识符号。
+
+        %\begin{noindent}
+\begin{cppcode}
+  // 禁止 —— 污染命名空间
+  using namespace foo;
+\end{cppcode}
+% \end{noindent}
+
+  \item  不要在头文件中使用 *命名空间别名* 除非显式标记内部命名空间使用。因为任何在头文件中引入的命名空间都会成为公开API的一部分。
+
+        %\begin{noindent}
+\begin{cppcode}
+  // 在 .cc 中使用别名缩短常用的命名空间
+  namespace baz = ::foo::bar::baz;
+\end{cppcode}
+
+\begin{cppcode}
+// 在 .h 中使用别名缩短常用的命名空间
+namespace librarian {
+  namespace impl {  // 仅限内部使用
+      namespace sidetable = ::pipeline_diagnostics::sidetable;
+    }  // namespace impl
+
+  inline void my_inline_function() {
+    // 限制在一个函数中的命名空间别名
+    namespace baz = ::foo::bar::baz;
+    ...
+  }
+}  // namespace librarian
+\end{cppcode}
+% \end{noindent}
+
+  \item  禁止用内联命名空间
+\end{itemize}
+
+\section{匿名命名空间和静态变量} \label{unnamed-namespace-and-static-variables}
+
+\DBox {
+  在 ``.cc`` 文件中定义一个不需要被外部引用的变量时，可以将它们放在匿名命名空间或声明为 ``static`` 。但是不要在
+  ``.h`` 文件中这么做。
+}
+
+\textbf{定义：}
+
+所有置于匿名命名空间的声明都具有内部链接性，函数和变量可以经由声明为 ``static`` 拥有内部链接性，这意味着你在这个文件中声明的这些标识符都不能在另一个文件中被访问。即使两个文件声明了完全一样名字的标识符，它们所指向的实体实际上是完全不同的。
+
+\textbf{结论：}
+
+推荐、鼓励在 ``.cc`` 中对于不需要在其他地方引用的标识符使用内部链接性声明，但是不要在 ``.h`` 中使用。
+
+匿名命名空间的声明和具名的格式相同，在最后注释上 ``namespace`` :
+
+%\begin{noindent}
+\begin{cppcode}
+      namespace {
+      ...
+      }  // namespace
+\end{cppcode}
+% \end{noindent}
