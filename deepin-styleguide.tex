@@ -1,0 +1,104 @@
+\documentclass[UTF8,a4paper,oneside]{ctexbook}
+
+\usepackage[margin=1in]{geometry}
+
+\usepackage{xcolor}
+\definecolor{deepin_blue}{HTML}{001eb6}
+\definecolor{deepin_black}{HTML}{000000}
+
+\usepackage{minted}
+
+\newminted{cpp}{frame=lines,framerule=1pt}
+\newmintinline{cpp}{breaklines}
+
+\usepackage{nameref}
+\usepackage[colorlinks=true]{hyperref}
+
+\newcommand*{\DFullRef}[1]{\hyperref[{#1}]{\ref*{#1} \nameref*{#1}}}
+
+\usepackage{titlesec}
+\titleformat{\chapter}[hang]
+{\huge\bfseries}
+{\thechapter\hspace{20pt}\textcolor{deepin_black}{|}\hspace{20pt}}{0pt}
+{\huge\bfseries}
+
+\makeatletter
+\renewcommand{\section}{
+  \@startsection{section}{1}{0mm}
+  {0.5\baselineskip}{0.5\baselineskip}{\bf\leftline}
+ }
+\makeatother
+
+\makeatletter
+\newcommand*{\DBox}[1]{
+\@makeother\#
+\noindent\fbox{\parbox{\linewidth}{#1}}
+}
+\makeatother
+
+\makeatletter
+\newcommand*{\GWarn}[1]{
+\@makeother\#
+\noindent\fbox{\parbox{\linewidth}{#1}}
+}
+\makeatother
+
+\usepackage{framed}
+\usepackage{quoting}
+
+\newenvironment{DNote}
+{
+    \color{deepin_blue}
+    \quoting[leftmargin=0pt, vskip=0pt,noorphans,font=itshape]
+}
+{
+    \endquoting
+}
+
+
+\newenvironment{DWarn}
+{
+    \color{deepin_blue}
+    \quoting[leftmargin=0pt, vskip=0pt,noorphans,font=itshape]
+}
+{
+    \endquoting
+}
+
+\usepackage{verbatim}
+
+% 设置段落间距
+\setlength{\parskip}{0.5em}
+
+\title{Deepin 开源项目风格指南}
+
+\date{\today}
+
+\begin{document}
+\maketitle
+
+\textbf{声明}
+
+本项目是在\href{https://github.com/zh-google-styleguide/zh-google-styleguide}{Google 开源项目风格指南——中文版}基础上修改而来。
+
+本项目使用 \LaTeX 构建。
+
+\textbf{Google 开源项目风格指南——中文版声明}
+
+项目原始地址是：\href{https://github.com/zh-google-styleguide/zh-google-styleguide}{Google 开源项目风格指南}
+
+如果你关注的是 Google 官方英文版，请移步 \href{https://github.com/google/styleguide}{Google Style Guide}
+
+每个较大的开源项目都有自己的风格指南：关于如何为该项目编写代码的一系列约定（有时候会比较武断）。当所有代码均保持一致的风格，在理解大型代码库时更为轻松。
+
+“风格”的含义涵盖范围广，从“变量使用驼峰格式（camelCase）”到“决不使用全局变量”再到“决不使用异常”，等等诸如此类。
+
+英文版项目维护的是在 Google 使用的编程风格指南。如果你正在修改的项目源自 Google，你可能会被引导至英文版项目页面，以了解项目所使用的风格。
+
+中文版项目采用 reStructuredText 纯文本标记语法，并使用 Sphinx 生成 HTML / CHM / PDF 等文档格式。
+
+英文版项目还包含 \href{https://github.com/google/styleguide/tree/gh-pages/cpplint}{cpplint} ——一个用来帮助适应风格准则的工具，以及 \href{https://raw.githubusercontent.com/google/styleguide/gh-pages/google-c-style.el}{google-c-style.el}，Google 风格的 Emacs 配置文件。
+
+\input{qt/index.tex}
+
+\end{document}
