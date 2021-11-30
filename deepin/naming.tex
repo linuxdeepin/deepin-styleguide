@@ -1,0 +1,177 @@
+\chapter{命名约定}
+
+在deepin发行版本中，大约有100个左右的项目是deepin来进行维护的。为了保障项目的统一性，这里对deepin的总体命名进行一个阐述。
+
+\section{通用名词} \label{general-naming-define}
+
+通用名词是指由deepin所持有的或主导的相关名词以及缩写。
+
+通用名词在代码，文件名，文档中有不同的变体。每个名词都会分别说明。
+
+\subsection{deepin}
+
+\textbf{总述}
+
+deepin是指由deepin.org所有发行的发行版本。在指代发行版本时，应该永远使用小写的`deepin`。
+
+\begin{DWarn}
+  \DBox{
+    在deepin 23以后的版本中，deepin将网站的主体迁移到deepin.org中，这将影响绝大部分的项目，特别是DBus接口部分。deepin承诺在2028年之前保障旧接口还是可以使用的。
+  }
+\end{DWarn}
+
+\textbf{使用}
+
+在文档，图片中，需要使用全小写的`deepin`，即使是首字母，也应该使用小写。
+
+\begin{cppcode}
+  deepin is an opensoucre os.  // 正确
+
+  Deepin is an opensoucre os.  // 错误，即使是段落首字母，也不应该大写
+\end{cppcode}
+
+在代码中，需要使用全小写的`deepin`，除非代码风格规定了必须使用全大写，或首字母大小的情况。
+
+\begin{cppcode}
+  #define DEEPIN_MACRO XXXX     // 正确，以代码规范为准
+  const int kDeepinNumber = 1;  // 正确，以代码规范为准
+
+  // 版权信息中也需要使用小写的deepin
+  // * Copyright (c) 2021. deepin All rights reserved.
+\end{cppcode}
+
+在文件名中，需要使用全小写的`deepin`。
+
+\begin{cppcode}
+  /usr/lib/deepin-daemon/dde-system-daemon  // 正确
+  /usr/share/Deepin/msc/res  // 错误，应该为 /usr/share/deepin/msc/res
+\end{cppcode}
+
+\textbf{例外}
+
+当deepin和其他名词组成专有名词时，可以使用大小写混合，例如：
+
+\begin{inicode}
+  # desktop文件中，deepin-music相关的应用
+  [Desktop Entry]
+  Name=Deepin Music
+\end{inicode}
+
+这里 \iniinline{Deepin Music}是一个专有名词，在任何情况下都不可以拆开使用。
+
+\subsection{DDE}
+
+\textbf{总述}
+
+DDE是 \iniinline{Deepin Desktop Environment} 的缩写。
+
+\DBox{
+  \iniinline{Deepin Desktop Environment}也是专有名词，不要拆开使用，也不要写成\iniinline{deepin Desktop Environment},\iniinline{deepin desktop environment}等形式。
+}
+
+\textbf{使用}
+
+在文档，图片中，需要使用全大写的`DDE`。
+
+\begin{cppcode}
+  The DDE is comprised of the Desktop Environment, deepin Window Manager, Control Center, Launcher and Dock.    // 正确
+  Use dde in other os.                  // 错误，文档中只有大写
+  Login to Dde.                         // 错误，文档中不允许混合大小写
+\end{cppcode}
+
+在代码中，需要使用全大写的`DDE`，除非代码风格规定了必须使用全大写，或首字母大写的情况。
+
+\begin{cppcode}
+  #define DDE_MACRO XXXX     // 正确，以代码规范为准
+  const int kDdeNumber = 1;  // 正确，以代码规范为准
+\end{cppcode}
+
+在文件名中，需要使用全小写的`dde`。
+
+\begin{cppcode}
+  /usr/lib/deepin-daemon/dde-system-daemon  // 正确
+\end{cppcode}
+
+\section{项目命名} \label{deepin-project-naming}
+
+\textbf{总述}
+
+deepin项目应该使用全小写的命名方式，单词使用\cppinline{-}进行连接。但是如果是应用型的项目，也可以使用倒置域名进行命名。
+
+\textbf{使用}
+
+\begin{cppcode}
+  org.deepin.lianliankan // 倒置域名格式，应用必须使用该方式命名
+  plymouth-theme-deepin  // 正确
+  deepin-font-manager    // 正确
+
+  Robot-Autotest         // 错误，不使用大写
+\end{cppcode}
+
+\section{文件命名}
+
+\textbf{总述}
+
+对于安装到系统中的文件，其命名方式和\DFullRef{deepin-project-naming}相同。同时需要满足GNU/Linux的通用命名风格。
+
+\textbf{使用}
+
+\begin{cppcode}
+  /usr/bin/dde-dock  // 正确
+  /usr/share/polkit-1/actions/com.deepin.pkexec.dde-file-manager.policy  // 正确
+
+  /usr/share/DeepinAIAssistant/translations  // 错误，不使用大写
+  /usr/lib/deepin-daemon/logViewerService    // 错误, log-view-service
+  /usr/lib/deepin-daemon/backlight_helper    // 错误，backlight-helper
+\end{cppcode}
+
+\section{DBus命名}
+
+\textbf{总述}
+
+DBus命名是一个较为模糊的地带，我们根据官方的设计文档\href{https://dbus.freedesktop.org/doc/dbus-api-design.html}{D-Bus API Design Guidelines}来指导DBus的命名规则：
+
+DBus由服务名，路径，接口，方法（包括属性，信号等）四个部分组成。
+
+对于服务名，路径，接口，其应该分解成域名，项目，组件三个部分。例如：
+
+\begin{cppcode}
+  org.deepin.Manual1.Search
+  /org/deepin/Manual1/Search
+  org.deepin.Manual1.Search
+\end{cppcode}
+
+其中 \cppinline{org.deepin} 是域名，Manual是项目名称，1是API版本号，Search是组件名称。其中：
+
+\begin{itemize}
+  \item 域名：使用倒置域名方法，目前deepin使用的域名为 \cppinline{org.deepin},  \cppinline{org.desktopspec}。
+  \item 项目名称：使用大小写混合方式。根据\href{https://dbus.freedesktop.org/doc/dbus-api-design.html}{D-Bus API Design Guidelines}，这里需要带上版本号。
+  \item 组件名称：如果一个项目提供多个服务，那么这里就需要有组件名称，组件名称使用大小写混合方式。
+\end{itemize}
+
+DBus的方法（包括属性，信号等）永远使用大小写混合方式。
+
+\textbf{使用}
+
+注意，这里org.freedesktop.portal是域名，这也是DBus的接口风格中最让人迷惑的地方。
+
+\begin{cppcode}
+  org.freedesktop.portal.Desktop      // 正确，但是缺少API版本号
+  /org/freedesktop/portal/Desktop     // 正确，但是缺少API版本号
+  org.freedesktop.portal.Desktop      // 正确，但是缺少API版本号
+\end{cppcode}
+
+\begin{cppcode}
+  org.deepin.DDE1.Accounts       // 正确
+  /org/deepin/DDE1/Accounts      // 正确
+  org.deepin.DDE1.Accounts       // 正确
+  com.deepin.daemon.Accounts     // 错误，这是目前的命名方式，其中daemon意义不明确
+
+  org.desktopspec.ConfigManager  // 正确，deepin将通用的标准在desktopsepc组织中进行实现
+
+\end{cppcode}
+
+
+\textbf{备注}
+
+按照这种命名方式，目前deepin/DDE相关的绝大部分DBus接口需要重新设计。

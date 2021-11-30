@@ -6,7 +6,7 @@
 
 下面的规则将引导你规避使用头文件时的各种陷阱。
 
-\section{Self-contained 头文件}
+\section{Self-contained 头文件} \label{self-contained-headers}
 
 \DBox {
 	头文件应该能够自给自足（self-contained，也就是可以作为第一个头文件被引入），以 \cppinline{.h} 结尾。至于用来插入文本的文件，说到底它们并不是头文件，所以应以 \cppinline{.inc} 结尾。不允许分离出 \cppinline{-inl.h} 头文件的做法。

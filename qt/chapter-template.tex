@@ -1,0 +1,27 @@
+
+\textbf{总述：}
+\textbf{定义：}
+\textbf{优点：}
+\textbf{缺点：}
+\textbf{结论：}
+
+\*\*(.*?)\*\*
+\\textbf{$1}
+
+``(.*?)``
+\\cppinline{$1}
+
+.. _(.*?):
+\\label{$1}
+
+.*\..*\. (.*?)\n.*~\n
+\section{$1}\n
+
+:ref:`.*<(.*?)>`
+\DFullRef{$1}
+
+.. code-block:: c++
+\begin{cppcode}
+
+`(.*?) <(.*?)>`_
+\href{$2}{$1}

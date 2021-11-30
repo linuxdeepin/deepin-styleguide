@@ -1,0 +1,282 @@
+\chapter{命名约定}
+
+最重要的一致性规则是命名管理。命名的风格能让我们在不需要去查找类型声明的条件下快速地了解某个名字代表的含义: 类型，变量，函数，常量，宏，等等，甚至 我们大脑中的模式匹配引擎非常依赖这些命名规则。\textbf{命名规则具有一定随意性，但相比按个人喜好命名，一致性更重要，所以无论你认为它们是否重要，规则总归是规则。}
+
+\section{通用命名规则} \label{general-naming-rules}
+
+\textbf{总述}
+
+函数命名，变量命名，文件命名要有描述性; 少用缩写。
+
+\textbf{说明}
+
+尽可能使用描述性的命名，别心疼空间，毕竟相比之下让代码易于新读者理解更重要。不要用只有项目开发者能理解的缩写，也不要通过砍掉几个字母来缩写单词.
+
+\begin{cppcode}
+  int priceCountReader;     // 无缩写
+  int numErrors;            // "num" 是一个常见的写法
+  int numDnsConnections;    // 人人都知道 "DNS" 是什么
+\end{cppcode}
+
+\begin{cppcode}
+  int n;                     // 毫无意义.
+  int nerr;                  // 含糊不清的缩写.
+  int nCompConns;            // 含糊不清的缩写.
+  int wgcConnections;        // 只有贵团队知道是什么意思.
+  int pcReader;              // "pc" 有太多可能的解释了.
+  int cstmrID;               // 删减了若干字母.
+\end{cppcode}
+
+注意，一些特定的广为人知的缩写是允许的，例如用 \cppinline{i} 表示迭代变量和用 \cppinline{T} 表示模板参数。
+
+\begin{DWarn}
+  在D-Pointer风格中，\cppinline{d_ptr,q_ptr,dd_ptr,qq_ptr}都是保留的名称。
+\end{DWarn}
+
+模板参数的命名应当遵循对应的分类: 类型模板参数应当遵循 \DFullRef{type-names} 的规则，而非类型模板应当遵循  \DFullRef{variable-names} 的规则.
+
+\section{文件命名}
+
+\textbf{总述}
+
+文件名要全部小写，可以包含下划线 (\cppinline{_}) 。如果存在无法\cppinline{_}的情况，可以考虑使用连字符\cppinline{-}，否则不允许例外。
+
+\begin{DWarn}
+  Qt默认情况下不使用任何连接符合，这使得文件名非常难以看懂，我们不接受这种风格。deepin的Qt项目统一使用下划线（\cppinline{_}）作为文件名连接符合。
+\end{DWarn}
+
+\textbf{说明}
+
+可接受的文件命名示例:
+
+\begin{cppcode}
+  my_useful_class.cpp
+  myusefulclass_test.cpp // \cppinline{_unittest} 和 \cppinline{_regtest} 已弃用.
+\end{cppcode}
+
+不接受的文件命名示例:
+
+\begin{cppcode}
+  my-useful-class.cpp  // 不接受，除非无法使用_
+  myusefulclass.cpp    // 不接受，难以看懂
+\end{cppcode}
+
+C++ 文件要以 \cppinline{.cpp} 结尾，头文件以 \cppinline{.h} 结尾。专门插入文本的文件则以 \cppinline{.inc} 结尾，参见 \DFullRef{self-contained-headers}。
+
+不要使用已经存在于 \cppinline{/usr/include} 下的文件名 (Yang.Y 注: 即编译器搜索系统头文件的路径)，如 \cppinline{db.h}。
+
+通常应尽量让文件名更加明确。\cppinline{http_server_logs.h} 就比 \cppinline{logs.h} 要好。定义类时文件名一般成对出现，如 \cppinline{foo_bar.h} 和 \cppinline{foo_bar.cpp}，对应于类 \cppinline{FooBar}。
+
+内联函数必须放在 \cppinline{.h} 文件中。如果内联函数比较短，就直接放在 \cppinline{.h} 中.
+
+\section{类型命名} \label{type-names}
+
+\textbf{总述}
+
+类型名称的每个单词首字母均大写，不包含下划线: \cppinline{MyExcitingClass}，\cppinline{MyExcitingEnum}。
+
+\textbf{说明}
+
+所有类型命名 —— 类，结构体，类型定义 (\cppinline{typedef})，枚举，类型模板参数 —— 均使用相同约定，即以大写字母开始，每个单词首字母均大写，不包含下划线。例如:
+
+\begin{cppcode}
+  // 类和结构体
+  class UrlTable { ...
+  class UrlTableTester { ...
+  struct UrlTableProperties { ...
+
+  // 类型定义
+  typedef hash_map<UrlTableProperties *, string> PropertiesMap;
+
+  // using 别名
+  using PropertiesMap = hash_map<UrlTableProperties *, string>;
+
+  // 枚举
+  enum UrlTableErrors { ...
+\end{cppcode}
+
+\section{变量命名} \label{variable-names}
+
+\textbf{总述}
+
+\begin{DWarn}
+  变量 (包括函数参数) 和数据成员名一律使用驼峰命名。
+
+  在D-Pointer的Private类中，成员变量不加任何修饰。
+
+  在一般的类中，使用\cppinline{m_}开头来标记成员变量。
+\end{DWarn}
+
+\textbf{说明}
+
+\subsection{普通变量命名}
+
+举例:
+
+\begin{cppcode}
+  QString tableName;   // 接受，驼峰命名
+
+  QString table_name;  // 不接受 - 用下划线.
+  QString tablename;   // 不接受 - 全小写.
+\end{cppcode}
+
+\subsection{类数据成员}
+
+不管是静态的还是非静态的，类数据成员都可以和普通变量一样，但是需要使用\cppinline{m_}前缀来修饰。
+
+\begin{DWarn}
+  为了实现较好的封装，Qt中大量使用D-Pointer技术，在这种情况下，一般通过\cppinline{d->localValue}的方式访问Private类的变量，这时候就不需要使用\cppinline{m_}来修饰成员变量。
+  对于非D-Pointer的Private类，使用\cppinline{m_}前缀来修饰成员变量。
+\end{DWarn}
+
+
+\begin{cppcode}
+  class TableInfo {
+      ...
+      private:
+      QString m_tableName;               // 好
+      static Pool<TableInfo>* m_pool;    // 好
+    };
+
+  class TableInfoPrivate {
+      ...
+      public:
+      QString tableName;               // 好，Private类不需要任何修饰
+      static Pool<TableInfo>* pool;    // 好，Private类不需要任何修饰
+    };
+\end{cppcode}
+
+\subsection{结构体变量}
+
+不管是静态的还是非静态的，结构体数据成员都可以和普通变量一样，不用像类那样接下划线:
+
+\begin{cppcode}
+  struct TableInfoData {
+      QString tableName;               // 好，命名风格和Private保持一致
+      static Pool<TableInfo>* pool;    // 好，命名风格和Private保持一致
+    }
+\end{cppcode}
+
+结构体与类的使用讨论，参考 \DFullRef{structs-vs-classes}。
+
+\section{常量命名} \label{constant-names}
+
+\textbf{总述}
+
+声明为 \cppinline{constexpr} 或 \cppinline{const} 的变量，或在程序运行期间其值始终保持不变的，命名时以 "k" 开头，大小写混合。例如:
+
+\begin{cppcode}
+  const int kDaysInAWeek = 7;
+\end{cppcode}
+
+\textbf{说明}
+
+所有具有静态存储类型的变量 (例如静态变量或全局变量，参见 \href{http://en.cppreference.com/w/cpp/language/storage_duration#Storage_duration}{存储类型}) 都应当以此方式命名。对于其他存储类型的变量，如自动变量等，这条规则是可选的。如果不采用这条规则，就按照一般的变量命名规则。
+
+\section{函数命名} \label{function-names}
+
+\textbf{总述}
+
+常规函数使用大小写混合，取值和设值函数则要求与变量名匹配: \cppinline{MyExcitingFunction()}，\cppinline{MyExcitingMethod()}，\cppinline{my_exciting_member_variable()}，\cppinline{set_my_exciting_member_variable()}。
+
+\textbf{说明}
+
+一般来说，函数名的每个单词首字母大写 (即 "驼峰变量名" 或 "帕斯卡变量名")，没有下划线。对于首字母缩写的单词，更倾向于将它们视作一个单词进行首字母大写 (例如，写作 \cppinline{StartRpc()} 而非 \cppinline{StartRPC()})。
+
+\begin{cppcode}
+  AddTableEntry()
+  DeleteUrl()
+  OpenFileOrDie()
+\end{cppcode}
+
+\begin{DWarn}
+  对于DBus接口函数，属性，信号，确保首字母大写，这也适用于一些其他风格的IPC/RPC接口或代码生成器生成的接口，包括dbus/protobuf/thrift等。
+\end{DWarn}
+
+同样的命名规则同时适用于类作用域与命名空间作用域的常量，因为它们是作为 API 的一部分暴露对外的，因此应当让它们看起来像是一个函数，因为在这时，它们实际上是一个对象而非函数的这一事实对外不过是一个无关紧要的实现细节。
+
+取值和设值函数的命名与变量一致。一般来说它们的名称与实际的成员变量对应，但并不强制要求。例如 \cppinline{int getCount()} 与 \cppinline{void setCount(int count)}。
+
+\section{命名空间命名}
+
+\textbf{总述}
+\begin{DWarn}
+  命名空间以大写字母命名。最高级命名空间的名字取决于项目名称。要注意避免嵌套命名空间的名字之间和常见的顶级命名空间的名字之间发生冲突.
+\end{DWarn}
+
+顶级命名空间的名称应当是项目名或者是该命名空间中的代码所属的团队的名字。命名空间中的代码，应当存放于和命名空间的名字匹配的文件夹或其子文件夹中.
+
+注意 \DFullRef{general-naming-rules} 的规则同样适用于命名空间。命名空间中的代码极少需要涉及命名空间的名称，因此没有必要在命名空间中使用缩写.
+
+要避免嵌套的命名空间与常见的顶级命名空间发生名称冲突。由于名称查找规则的存在，命名空间之间的冲突完全有可能导致编译失败。尤其是，不要创建嵌套的 \cppinline{std} 命名空间。建议使用更独特的项目标识符 (\cppinline{WebSearch::Index}，\cppinline{WebSearch::IndexUtil}) 而非常见的极易发生冲突的名称 (比如 \cppinline{WebSearch::Util}).
+
+对于 \cppinline{Internal} 命名空间，要当心加入到同一 \cppinline{internal} 命名空间的代码之间发生冲突 (由于内部维护人员通常来自同一团队，因此常有可能导致冲突)。在这种情况下，请使用文件名以使得内部名称独一无二 (例如对于 \cppinline{frobber.h}，使用 \cppinline{WebSearch::Index::FrobberInternal})。
+
+\section{枚举命名}
+
+\textbf{总述}
+
+枚举的命名应当和 \DFullRef{type-names} 一致: \cppinline{EnumName} 。
+
+\textbf{说明}
+
+单独的枚举值使用首字母大写的大小写混合命名方式。枚举名 \cppinline{UrlTableErrors} (以及 \cppinline{AlternateUrlTableErrors}) 是类型，所以要用大小写混合的方式.
+
+\begin{cppcode}
+  enum UrlTableErrors {
+      OK = 0,
+      ErrorOutOfMemory,
+      ErrorMalformedInput,
+    };
+\end{cppcode}
+
+2009 年 1 月之前，Google一直建议采用 \DFullRef{macro-names} 的方式命名枚举值。由于枚举值和宏之间的命名冲突，直接导致了很多问题。由此，这里改为优先选择常量风格的命名方式。新代码应该尽可能优先使用常量风格。但是老代码没必要切换到常量风格，除非宏风格确实会产生编译期问题.
+
+\section{宏命名} \label{macro-names}
+
+\textbf{总述}
+
+你并不打算 \DFullRef{preprocessor-macros}，对吧? 如果你一定要用，像这样命名:
+
+\cppinline{MY_MACRO_THAT_SCARES_SMALL_CHILDREN}.
+
+\textbf{说明}
+
+参考 \DFullRef{preprocessor-macros}; 通常 *不应该* 使用宏。如果不得不用，其命名像枚举命名一样全部大写，使用下划线:
+
+\begin{cppcode}
+  #define ROUND(x) ...
+  #define PI_ROUNDED 3.0
+\end{cppcode}
+
+\section{命名规则的特例}
+
+\textbf{总述}
+
+如果你命名的实体与已有 C/C++ 实体相似，可参考现有命名策略。
+
+\begin{DWarn}
+  如果是为了扩展STL的接口，或继承其他底层库的函数，则可以不受命名规则限制，以避免功能错误。
+\end{DWarn}
+
+\cppinline{bigopen()}: 函数名，参照 \cppinline{open()} 的形式
+
+\cppinline{uint}: \cppinline{typedef}
+
+\cppinline{bigpos}: \cppinline{struct} 或 \cppinline{class}，参照 \cppinline{pos} 的形式
+
+\cppinline{sparse_hash_map}: STL 型实体; 参照 STL 命名约定
+
+\cppinline{LONGLONG_MAX}: 常量，如同 \cppinline{INT_MAX}
+
+\section{注解}
+
+\subsection{ 译者 (YuleFox) 笔记}
+
+感觉 Google 的命名约定很高明，比如写了简单的类 QueryResult，接着又可以直接定义一个变量 \cppinline{query_result}，区分度很好; 再次，类内变量以下划线结尾，那么就可以直接传入同名的形参，比如 \cppinline{TextQuery::TextQuery(std::string word) : word_(word) {}} ，其中 \cppinline{word_} 自然是类内私有成员.
+
+\subsection{ deepin风格注解 }
+
+对Qt风格同理：
+
+比如写了简单的类 \cppinline{QueryResult}，接着又可以直接定义一个变量 \cppinline{queryResult}，区分度很好; 再次，类内变量以下划线结尾，那么就可以直接传入同名的形参，比如 \cppinline{TextQuery::TextQuery(QString word) : m_word(word) {}} ，其中 \cppinline{m_word} 自然是类内私有成员.

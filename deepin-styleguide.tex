@@ -1,15 +1,22 @@
 \documentclass[UTF8,a4paper,oneside]{ctexbook}
 
+\usepackage{indentfirst} 
+\setlength{\parindent}{2em}
+
 \usepackage[margin=1in]{geometry}
 
 \usepackage{xcolor}
-\definecolor{deepin_blue}{HTML}{001eb6}
+\definecolor{deepin_blue}{HTML}{0088FD}
 \definecolor{deepin_black}{HTML}{000000}
+\definecolor{deepin_orange}{RGB}{244, 151, 0}
 
 \usepackage{minted}
 
-\newminted{cpp}{frame=lines,framerule=1pt}
-\newmintinline{cpp}{breaklines}
+\newminted{cpp}{frame=lines,framerule=1pt,breaklines,breakanywhere}
+\newmintinline{cpp}{breaklines,breakanywhere}
+
+\newminted{ini}{frame=lines,framerule=1pt,breaklines,breakanywhere}
+\newmintinline{ini}{breaklines,breakanywhere}
 
 \usepackage{nameref}
 \usepackage[colorlinks=true]{hyperref}
@@ -32,6 +39,7 @@
 \makeatletter
 \newcommand*{\DBox}[1]{
 \@makeother\#
+\vspace{0.5\baselineskip}
 \noindent\fbox{\parbox{\linewidth}{#1}}
 }
 \makeatother
@@ -49,17 +57,18 @@
 \newenvironment{DNote}
 {
     \color{deepin_blue}
-    \quoting[leftmargin=0pt, vskip=0pt,noorphans,font=itshape]
+    \bfseries
+    \quoting[leftmargin=0pt, vskip=0pt,noorphans]
 }
 {
     \endquoting
 }
 
-
 \newenvironment{DWarn}
 {
-    \color{deepin_blue}
-    \quoting[leftmargin=0pt, vskip=0pt,noorphans,font=itshape]
+    \color{deepin_orange}
+    \bfseries
+    \quoting[leftmargin=0pt, vskip=0pt,noorphans]
 }
 {
     \endquoting
@@ -69,8 +78,10 @@
 
 % 设置段落间距
 \setlength{\parskip}{0.5em}
-
-\title{Deepin 开源项目风格指南}
+\makeatletter
+\@addtoreset{chapter}{part}
+\makeatother  
+\title{deepin 开源项目风格指南}
 
 \date{\today}
 
@@ -99,6 +110,10 @@
 
 英文版项目还包含 \href{https://github.com/google/styleguide/tree/gh-pages/cpplint}{cpplint} ——一个用来帮助适应风格准则的工具，以及 \href{https://raw.githubusercontent.com/google/styleguide/gh-pages/google-c-style.el}{google-c-style.el}，Google 风格的 Emacs 配置文件。
 
+\tableofcontents
+\newpage
+
+\input{deepin/index.tex}
 \input{qt/index.tex}
 
 \end{document}
