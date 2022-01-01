@@ -1,0 +1,97 @@
+\chapter{Map}
+对于空 \texttt{map} 请使用 \texttt{make(..)} 初始化， 并且 \texttt{map} 是通过编程方式填充的。
+这使得 \texttt{map} 初始化在表现上不同于声明，并且它还可以方便地在 \texttt{make} 后添加大小提示。
+\begin{itemize}[leftmargin=4em]
+\item 错误用法
+
+  \begin{minted}{go}
+    // 声明和初始化看起来非常相似的
+    var (
+    	// m1 读写安全;
+    	// m2 在写入时会 panic
+    	m1 = map[T1]T2{}
+    	m2 map[T1]T2
+    )
+  \end{minted}
+\item 正确用法
+
+  \begin{minted}{go}
+    // 声明和初始化看起来差别非常大
+    var (
+    	// m1 读写安全;
+    	// m2 在写入时会 panic
+    	m1 = make(map[T1]T2)
+    	m2 map[T1]T2
+    )
+  \end{minted}
+\end{itemize}
+
+尽可能在初始化时提供 \texttt{map} 容量大小。如果 \texttt{map} 包含固定的元素列表，
+则使用 \texttt{map literals}(\texttt{map} 初始化列表)初始化映射。
+\begin{itemize}[leftmargin=4em]
+\item 错误用法
+
+  \begin{minted}{go}
+    m := make(map[T1]T2, 3)
+    m[k1] = v1
+    m[k2] = v2
+    m[k3] = v3
+  \end{minted}
+\item 正确用法
+
+  \begin{minted}{go}
+    m := map[T1]T2{
+      k1: v1,
+      k2: v2,
+      k3: v3,
+    }
+  \end{minted}
+\end{itemize}
+
+基本准则是：在初始化时使用 \texttt{map} 初始化列表来添加一组固定的元素。
+否则使用 \texttt{make}(如果可以，尽量指定 \texttt{map} 容量)。
+
+\section{指定容器容量}
+尽可能指定容器容量，以便为容器预先分配内存。这将在添加元素时最小化后续分配（通过复制和调整容器大小）。
+
+指定 \texttt{Map} 容量提示，尽可能在使用 \texttt{make()} 初始化的时候提供容量信息。
+\begin{minted}[xleftmargin=3.5em]{go}
+  make(map[T1]T2, hint)
+\end{minted}
+
+向 \texttt{make()} 提供容量提示会在初始化时尝试调整 \texttt{map} 的大小，这将减少在将元素添加到 \texttt{map} 时为 \texttt{map} 重新分配内存。
+与 \texttt{slices} 不同， \texttt{map capacity} 提示并不保证完全的抢占式分配，而是用于估计所需的 \texttt{hashmap bucket} 的数量。 因此，在将元素添加到 \texttt{map} 时，甚至在指定 \texttt{map} 容量时，仍可能发生分配。
+\begin{itemize}[leftmargin=4em]
+\item 错误用法
+
+  \begin{minted}{go}
+    // m 是在没有大小提示的情况下创建的； 在运行时可能会有更多分配
+    m := make(map[string]os.FileInfo)
+
+    files, _ := ioutil.ReadDir("./files")
+    for _, f := range files {
+    	m[f.Name()] = f
+    }
+  \end{minted}
+\item 正确用法
+
+  \begin{minted}{go}
+    // m 是有大小提示创建的；在运行时可能会有更少的分配
+    files, _ := ioutil.ReadDir("./files")
+
+    m := make(map[string]os.FileInfo, len(files))
+    for _, f := range files {
+    	m[f.Name()] = f
+    }
+  \end{minted}
+\end{itemize}
+
+在尽可能的情况下，在使用 \texttt{make()} 初始化切片时提供容量信息，特别是在追加切片时。
+\begin{minted}[xleftmargin=3.5em]{go}
+  make([]T, length, capacity)
+\end{minted}
+
+与 \texttt{maps} 不同， \texttt{slice capacity} 不是一个提示：
+编译器将为提供给 \texttt{make()} 的 \texttt{slice} 的容量分配足够的内存，
+这意味着后续的 \texttt{append()} 操作将导致零分配（直到 \texttt{slice} 的长度与容量匹配，
+在此之后，任何 \texttt{append} 都可能调整大小以容纳其它元素）。

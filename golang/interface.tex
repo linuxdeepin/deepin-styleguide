@@ -1,0 +1,91 @@
+\chapter{Interface}
+\section{interface 合理性验证}
+在编译时验证接口的符合性，包括：
+\begin{itemize}[leftmargin=4em]
+\item 将实现特定接口的导出类型作为接口API 的一部分进行检查;
+\item 实现同一接口的(导出和非导出)类型属于实现类型的集合;
+\item 任何违反接口合理性检查的场景；都会终止编译,并通知给用户。
+\end{itemize}
+
+补充:上面3条是编译器对接口的检查机制, 使错误使用接口在编译期报错。 所以可以利用这个机制让部分问题在编译期暴露。
+
+如果 \texttt{\*Handler} 与 \texttt{http.Handler} 的接口不匹配,
+那么语句 \texttt{var \_ http.Handler = (\*Handler)(nil)} 将无法编译通过。
+
+\begin{itemize}[leftmargin=4em]
+\item 错误用法
+
+  \begin{minted}{go}
+    // 如果Handler没有实现http.Handler,会在运行时报错
+    type Handler struct {
+    // ...
+    }
+    func (h *Handler) ServeHTTP(
+    	w http.ResponseWriter,
+    	r *http.Request,
+    ) {
+    //...
+    }
+  \end{minted}
+\item 正确用法
+
+  \begin{minted}{go}
+    type Handler struct {
+    	// ...
+    }
+    // 用于触发编译期的接口的合理性检查机制
+    // 如果Handler没有实现http.Handler,会在编译期报错
+    var _ http.Handler = (*Handler)(nil)
+    func (h *Handler) ServeHTTP(
+    	w http.ResponseWriter,
+    	r *http.Request,
+    ) {
+    	// ...
+    }
+  \end{minted}
+\end{itemize}
+
+赋值的右边应该是断言类型的零值。 对于指针类型（如 \texttt{\*Handler}）、切片和映射，这是 \texttt{nil}； 对于结构类型，这是空结构。
+
+\begin{minted}[xleftmargin=3.5em]{go}
+  type LogHandler struct {
+  	h   http.Handler
+  	log *zap.Logger
+  }
+  var _ http.Handler = LogHandler{}
+  func (h LogHandler) ServeHTTP(
+  	w http.ResponseWriter,
+  	r *http.Request,
+  ) {
+  	// ...
+  }
+\end{minted}
+
+\section{指向 interface 的指针}
+通常用不到指向接口类型的指针，应该将接口作为值进行传递，在这样的传递过程中，实质上传递的底层数据仍然可以是指针。
+
+接口实质上在底层用两个字段表示：
+\begin{itemize}[leftmargin=4em]
+\item 一个指向某些特定类型信息的指针。可以将其视为 "type" ；
+\item 数据指针。如果存储的数据是指针，则直接存储。如果存储的数据是一个值，则存储指向该值的指针。
+\end{itemize}
+
+如果希望接口方法修改基础数据，则必须使用指针传递(将对象指针赋值给接口变量)。
+\begin{minted}[xleftmargin=3.5em]{go}
+  type F interface {
+  	f()
+  }
+
+  type S1 struct{}
+
+  func (s S1) f() {}
+
+  type S2 struct{}
+
+  func (s *S2) f() {}
+
+  // f1.f()无法修改底层数据
+  // f2.f() 可以修改底层数据,给接口变量f2赋值时使用的是对象指针
+  var f1 F = S1{}
+  var f2 F = &S2{}
+\end{minted}

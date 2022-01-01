@@ -1,0 +1,23 @@
+\chapter{Printf-style}
+如果你在函数外声明 \texttt{Printf-style} 函数的格式字符串，请将其设置为 \texttt{const} 常量。
+这有助于 \texttt{go vet} 对格式字符串执行静态分析。
+\begin{itemize}[leftmargin=4em]
+\item 错误用法
+
+  \begin{minted}{go}
+    msg := "unexpected values %v, %v\n"
+    fmt.Printf(msg, 1, 2)
+  \end{minted}
+\item 正确用法
+
+  \begin{minted}{go}
+    const msg = "unexpected values %v, %v\n"
+    fmt.Printf(msg, 1, 2)
+  \end{minted}
+\end{itemize}
+
+声明 \texttt{Printf-style} 函数时，确保 \texttt{go vet} 可以检测到它并检查格式字符串。
+尽可能使用预定义的 \texttt{Printf-style} 函数名称， \texttt{go vet} 将默认进行检查。
+
+如果不能使用预定义的名称，则以 \texttt{f} 结束选择的名称： \texttt{Wrapf} ，而不是 \texttt{Wrap} 。
+\texttt{go vet} 可以要求检查特定的 \texttt{Printf} 样式名称，但名称必须以 \texttt{f} 结尾。

@@ -1,0 +1,193 @@
+\chapter{Error}
+\texttt{Go} 中有多种声明错误（Error) 的选项：
+\begin{itemize}[leftmargin=4em]
+\item \texttt{errors.New} 对于简单静态字符串的错误；
+\item \texttt{fmt.Errorf} 用于格式化的错误字符串；
+\item 实现 \texttt{Error()} 方法的自定义类型；
+\item 用 \texttt{"pkg/errors".Wrap} 的 \texttt{Wrapped errors} 。
+\end{itemize}
+
+返回错误时，考虑以下因素以确定最佳选择：
+\begin{itemize}[leftmargin=4em]
+\item 这是一个不需要额外信息的简单错误吗？如果是这样， \texttt{errors.New} 足够了；
+\item 客户需要检测并处理此错误吗？如果是这样，则应使用自定义类型并实现该 \texttt{Error()} 方法；
+\item 当前是否正在传播下游函数返回的错误？如果是这样，使用错误包装；
+\item 否则 \texttt{fmt.Errorf} 就可以了。
+\end{itemize}
+
+如果客户端需要检测错误，并且已使用创建了一个简单的错误 \texttt{errors.New} ，请使用一个错误变量。
+\begin{itemize}[leftmargin=4em]
+\item 错误用法
+
+  \begin{minted}{go}
+    // package foo
+
+    func Open() error {
+    	return errors.New("could not open")
+    }
+
+
+    // package bar
+
+    func use() {
+    	if err := foo.Open(); err != nil {
+    		if err.Error() == "could not open" {
+    			// handle
+    		} else {
+    			panic("unknown error")
+    		}
+    	}
+    }
+  \end{minted}
+\item 正确用法
+
+  \begin{minted}{go}
+    // package foo
+
+    var ErrCouldNotOpen = errors.New("could not open")
+
+    func Open() error {
+    	return ErrCouldNotOpen
+    }
+
+    // package bar
+
+    if err := foo.Open(); err != nil {
+    	if errors.Is(err, foo.ErrCouldNotOpen) {
+    		// handle
+    	} else {
+    		panic("unknown error")
+    	}
+    }
+  \end{minted}
+\end{itemize}
+
+如果有可能需要客户端检测的错误，并且想向其中添加更多信息（例如，它不是静态字符串），则应使用自定义类型。
+\begin{itemize}[leftmargin=4em]
+\item 错误用法
+
+  \begin{minted}{go}
+    func open(file string) error {
+    	return fmt.Errorf("file %q not found", file)
+    }
+
+    func use() {
+    	if err := open("testfile.txt"); err != nil {
+    		if strings.Contains(err.Error(), "not found") {
+    			// handle
+    		} else {
+    			panic("unknown error")
+    		}
+    	}
+    }
+  \end{minted}
+\item 正确用法
+
+  \begin{minted}{go}
+    type errNotFound struct {
+    	file string
+    }
+
+    func (e errNotFound) Error() string {
+    	return fmt.Sprintf("file %q not found", e.file)
+    }
+
+    func open(file string) error {
+    	return errNotFound{file: file}
+    }
+
+    func use() {
+    	if err := open("testfile.txt"); err != nil {
+    		if _, ok := err.(errNotFound); ok {
+    			// handle
+    		} else {
+    			panic("unknown error")
+    		}
+    	}
+    }
+  \end{minted}
+\end{itemize}
+
+直接导出自定义错误类型时要小心，因为它们已成为程序包公共 API 的一部分。最好公开匹配器功能以检查错误。
+\begin{minted}[xleftmargin=3.5em]{go}
+  // package foo
+
+  type errNotFound struct {
+  	file string
+  }
+
+  func (e errNotFound) Error() string {
+  	return fmt.Sprintf("file %q not found", e.file)
+  }
+
+  func IsNotFoundError(err error) bool {
+  	_, ok := err.(errNotFound)
+  	return ok
+  }
+
+  func Open(file string) error {
+  	return errNotFound{file: file}
+  }
+
+
+  // package bar
+
+  if err := foo.Open("foo"); err != nil {
+  	if foo.IsNotFoundError(err) {
+  		// handle
+  	} else {
+  		panic("unknown error")
+  	}
+  }
+\end{minted}
+
+\section{Error Wrapping}
+一个（函数/方法）调用失败时，有三种主要的传播错误方式：
+\begin{itemize}[leftmargin=4em]
+\item 如果没有要添加的其它上下文，并且要维护原始错误类型，则返回原始错误；
+\item 添加上下文，使用 \texttt{"pkg/errors".Wrap} 以便错误消息提供更多上下文， \texttt{"pkg/errors".Cause} 可用于提取原始错误；
+\item 如果调用者不需要检测或处理的特定错误情况，使用 \texttt{fmt.Errorf} 。
+\end{itemize}
+
+建议在可能的地方添加上下文，用来获得诸如“调用服务 foo：连接被拒绝”之类的更有用的错误，而不是诸如“连接被拒绝”之类的模糊错误。
+
+在将上下文添加到返回的错误时，请避免使用“failed to”之类的短语以保持上下文简洁，
+这些短语会陈述明显的内容，并随着错误在堆栈中的渗透而逐渐堆积：
+\begin{itemize}[leftmargin=4em]
+\item 错误用法
+
+  \begin{minted}{go}
+    s, err := store.New()
+    if err != nil {
+    	return fmt.Errorf("failed to create new store: %v", err)
+    }
+  \end{minted}
+\item 正确用法
+
+  \begin{minted}{go}
+    s, err := store.New()
+    if err != nil {
+    	return fmt.Errorf("new store: %v", err)
+    }
+  \end{minted}
+\end{itemize}
+
+但是，一旦将错误发送到另一个系统，就应该明确消息是错误消息（例如使用err标记，或在日志中以”Failed”为前缀）。
+
+\section{处理类型断言失败}
+\texttt{type assertion} 的单个返回值形式针对不正确的类型将产生 \texttt{panic} 。因此，始终使用“comma ok”的惯用法。
+\begin{itemize}[leftmargin=4em]
+\item 错误用法
+
+  \begin{minted}{go}
+    t := i.(string)
+  \end{minted}
+\item 正确用法
+
+  \begin{minted}{go}
+    t, ok := i.(string)
+    if !ok {
+    	// 优雅地处理错误
+    }
+  \end{minted}
+\end{itemize}

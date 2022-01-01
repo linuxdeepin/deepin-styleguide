@@ -1,0 +1,67 @@
+\chapter{Panic}
+在生产环境中运行的代码必须避免出现 \texttt{panic} 。 \texttt{panic} 是 \texttt{cascading failures} 级联失败的主要根源 。
+如果发生错误，该函数必须返回错误，并允许调用方决定如何处理它。
+\begin{itemize}[leftmargin=4em]
+\item 错误用法
+
+  \begin{minted}{go}
+    func run(args []string) {
+    	if len(args) == 0 {
+    		panic("an argument is required")
+    	}
+    	// ...
+    }
+
+    func main() {
+    	run(os.Args[1:])
+    }
+  \end{minted}
+\item 正确用法
+
+  \begin{minted}{go}
+    func run(args []string) error {
+    	if len(args) == 0 {
+    		return errors.New("an argument is required")
+    	}
+    	// ...
+    	return nil
+    }
+
+    func main() {
+    	if err := run(os.Args[1:]); err != nil {
+    		fmt.Fprintln(os.Stderr, err)
+    		os.Exit(1)
+    	}
+    }
+  \end{minted}
+\end{itemize}
+
+\texttt{panic/recover} 不是错误处理策略。仅当发生不可恢复的事情（例如： \texttt{nil} 引用）时，程序才必须 \texttt{panic} 。
+程序初始化是一个例外：程序启动时应使程序中止的不良情况可能会引起 \texttt{panic} 。
+\begin{minted}[xleftmargin=3.5em,breaklines]{go}
+var _statusTemplate = template.Must(template.New("name").Parse("_statusHTML"))
+\end{minted}
+
+即使在测试代码中，也优先使用 \texttt{t.Fatal} 或者 \texttt{t.FailNow} 而不是 \texttt{panic} 来确保失败被标记。
+\begin{itemize}[leftmargin=4em]
+\item 错误用法
+
+  \begin{minted}{go}
+    // func TestFoo(t *testing.T)
+
+    f, err := ioutil.TempFile("", "test")
+    if err != nil {
+    	panic("failed to set up test")
+    }
+  \end{minted}
+\item 正确用法
+
+  \begin{minted}{go}
+    // func TestFoo(t *testing.T)
+
+    f, err := ioutil.TempFile("", "test")
+    if err != nil {
+    	t.Fatal("failed to set up test")
+    }
+  \end{minted}
+\end{itemize}

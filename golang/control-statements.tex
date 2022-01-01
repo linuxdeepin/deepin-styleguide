@@ -1,0 +1,58 @@
+\chapter{控制语句}
+代码应通过尽可能先处理错误情况和特殊情况，并尽早返回或继续循环来减少嵌套。减少嵌套多个级别的代码的代码量。
+\begin{itemize}[leftmargin=4em]
+\item 错误用法
+
+  \begin{minted}{go}
+    for _, v := range data {
+    	if v.F1 == 1 {
+    		v = process(v)
+    		if err := v.Call(); err == nil {
+    			v.Send()
+    		} else {
+    			return err
+    		}
+    	} else {
+    		log.Printf("Invalid v: %v", v)
+    	}
+    }
+  \end{minted}
+\item 正确用法
+
+  \begin{minted}{go}
+    for _, v := range data {
+    	if v.F1 != 1 {
+    		log.Printf("Invalid v: %v", v)
+    		continue
+    	}
+
+    	v = process(v)
+    	if err := v.Call(); err != nil {
+    		return err
+    	}
+    	v.Send()
+    }
+  \end{minted}
+\end{itemize}
+
+去掉不必要的 \texttt{else} ，如果在 \texttt{if} 的两个分支中都设置了变量，则可以将其替换为单个 \texttt{if} 。
+\begin{itemize}[leftmargin=4em]
+\item 错误用法
+
+  \begin{minted}{go}
+    var a int
+    if b {
+    	a = 100
+    } else {
+    	a = 10
+    }
+  \end{minted}
+\item 正确用法
+
+  \begin{minted}{go}
+    a := 10
+    if b {
+    	a = 100
+    }
+  \end{minted}
+\end{itemize}

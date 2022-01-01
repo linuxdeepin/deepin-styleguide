@@ -1,0 +1,56 @@
+\chapter{Channel}
+\textbf{channel 的 size 要么是 1，要么是无缓冲的。}
+
+\texttt{channel} 通常 \texttt{size} 应为 \texttt{1} 或是无缓冲的。默认情况下，\texttt{channel} 是无缓冲的，其 \texttt{size} 为零。
+任何其它尺寸都必须经过严格的审查，确定是否是通道边界，竞态条件，以及逻辑上下文导致需要 \texttt{size} 大于 \texttt{1} ，尽量从源头进行排查。
+\begin{itemize}[leftmargin=4em]
+\item 错误用法
+
+  \begin{minted}{go}
+    // 应该足以满足任何情况！
+    c := make(chan int, 64)
+  \end{minted}
+\item 正确用法
+
+  \begin{minted}{go}
+    // 大小：1
+    c := make(chan int, 1) // 或者
+    // 无缓冲 channel，大小为 0
+    c := make(chan int)
+  \end{minted}
+\end{itemize}
+
+\section{禁止重复释放channel}
+重复释放一般存在于异常流程判断中，如果恶意攻击者构造出异常条件使程序重复释放 \texttt{channel} ，则会触发运行时恐慌，从而造成 \texttt{DoS} 攻击。
+
+\begin{itemize}[leftmargin=4em]
+\item 错误用法
+
+  下面代码中多次关掉channel会触发运行时错误。
+  \begin{minted}{go}
+    func foo(c chan int) {
+    	defer close(c)
+    	err := processBusiness()
+    	if err != nil {
+    		c <- 0
+    		close(c) // 【错误】重复释放channel
+    		return
+    	}
+    	c <- 1
+    }
+  \end{minted}
+\item 正确用法
+
+  使用defer延迟关闭channel，并且确保channel只释放一次。
+  \begin{minted}{go}
+    func foo(c chan int) {
+    	defer close(c) // 【修改】使用defer延迟关闭channel
+    	err := processBusiness()
+    	if err != nil {
+    		c <- 0
+    		return
+    	}
+    	c <- 1
+    }
+  \end{minted}
+\end{itemize}
