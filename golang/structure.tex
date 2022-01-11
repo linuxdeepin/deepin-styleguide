@@ -1,0 +1,167 @@
+\chapter{结构体}
+\section{结构体嵌入}
+嵌入类型（例如 \texttt{mutex} ）应位于结构体内的字段列表的顶部，并且必须有一个空行将嵌入式字段与常规字段分隔开。
+\begin{itemize}[leftmargin=4em]
+\item 错误用法
+
+  \begin{minted}{go}
+    type Client struct {
+    	version int
+    	http.Client
+    }
+  \end{minted}
+\item 正确用法
+
+  \begin{minted}{go}
+    type Client struct {
+    	http.Client
+
+    	version int
+    }
+  \end{minted}
+\end{itemize}
+
+内嵌应该提供切实的好处，比如以语义上合适的方式添加或增强功能。 它应该在对用户没有任何不利影响的情况下使用。
+
+嵌入不应该：
+\begin{itemize}[leftmargin=4em]
+\item 纯粹是为了美观或方便；
+\item 使外部类型更难构造或使用；
+\item 影响外部类型的零值。如果外部类型有一个有用的零值，则在嵌入内部类型之后应该仍然有一个有用的零值；
+\item 作为嵌入内部类型的副作用，从外部类型公开不相关的函数或字段；
+\item 公开未导出的类型；
+\item 影响外部类型的复制形式；
+\item 更改外部类型的API或类型语义；
+\item 嵌入内部类型的非规范形式；
+\item 公开外部类型的实现详细信息；
+\item 允许用户观察或控制类型内部；
+\item 通过包装的方式改变内部函数的一般行为，这种包装方式会给用户带来一些意料之外情况。
+\end{itemize}
+
+简单地说，做到有意识和有目的嵌入。一种很好的测试体验是，“是否所有这些导出的内部方法、字段都将直接添加到外部类型”如果答案是 \texttt{some} 或 \texttt{no} ，不要嵌入内部类型，而是使用字段。
+\begin{itemize}[leftmargin=4em]
+\item 错误用法
+
+  \begin{minted}{go}
+    type A struct {
+    	// Bad: A.Lock() and A.Unlock() 现在可用
+    	// 不提供任何功能性好处，并允许用户控制有关A的内部细节。
+    	sync.Mutex
+    }
+
+    type Book struct {
+    	// Bad: 指针更改零值的有用性
+    	io.ReadWriter
+    	// other fields
+    }
+    // later
+    var b Book
+    b.Read(...)  // panic: nil pointer
+    b.String()   // panic: nil pointer
+    b.Write(...) // panic: nil pointer
+    type Client struct {
+    	sync.Mutex
+    	sync.WaitGroup
+    	bytes.Buffer
+    	url.URL
+    }
+  \end{minted}
+\item 正确用法
+
+  \begin{minted}{go}
+    type countingWriteCloser struct {
+    	// Good: Write() 在外层提供用于特定目的，
+    	// 并且委托工作到内部类型的Write()中。
+    	io.WriteCloser
+    	count int
+    }
+    func (w *countingWriteCloser) Write(bs []byte) (int, error) {
+    	w.count += len(bs)
+    	return w.WriteCloser.Write(bs)
+    }
+    type Book struct {
+    	// Good: 有用的零值
+    	bytes.Buffer
+    	// other fields
+    }
+    // later
+    var b Book
+    b.Read(...)  // ok
+    b.String()   // ok
+    b.Write(...) // ok
+    type Client struct {
+    	mtx sync.Mutex
+    	wg  sync.WaitGroup
+    	buf bytes.Buffer
+    	url url.URL
+    }
+  \end{minted}
+\end{itemize}
+
+\section{使用字段名初始化结构体}
+初始化结构体时，应该指定字段名称。
+省略结构中的零值字段，初始化具有字段名的结构时，除非提供有意义的上下文，否则忽略值为零的字段。
+\begin{itemize}[leftmargin=4em]
+\item 错误用法
+
+  \begin{minted}{go}
+    k := User{"John", "Doe", Admin: false}
+  \end{minted}
+\item 正确用法
+
+  \begin{minted}{go}
+    k := User{
+    	FirstName: "John",
+    	LastName: "Doe",
+    }
+  \end{minted}
+\end{itemize}
+
+这有助于通过省略该上下文中的默认值来减少阅读的障碍。只指定有意义的值。
+
+在字段名提供有意义上下文的地方包含零值。例如，表驱动测试中的测试用例可以受益于字段的名称，即使它们是零值的。
+\begin{minted}[xleftmargin=3.5em]{go}
+  tests := []struct{
+  	give string
+  	want int
+  }{
+  	give: "0",
+  	want: 0,
+  	// ...
+  }
+\end{minted}
+
+对零值结构使用 \texttt{var} ，如果在声明中省略了结构的所有字段，请使用 \texttt{var} 声明结构。
+\begin{itemize}[leftmargin=4em]
+\item 错误用法
+
+  \begin{minted}{go}
+    user := User{}
+  \end{minted}
+\item 正确用法
+
+  \begin{minted}{go}
+    var user User
+  \end{minted}
+\end{itemize}
+
+这将零值结构与那些具有类似于为{初始化 \texttt{Maps}} 创建的、区别于非零值字段的结构区分开来。
+初始化 \texttt{struct} 引用，在初始化结构引用时，请使用 \texttt{\&T\{\}} 代替 \texttt{new(T)} ，以使其与结构体初始化一致。
+\begin{itemize}[leftmargin=4em]
+\item 错误用法
+
+  \begin{minted}{go}
+    sval := T{Name: "foo"}
+
+    // inconsistent
+    sptr := new(T)
+    sptr.Name = "bar"
+  \end{minted}
+\item 正确用法
+
+  \begin{minted}{go}
+    sval := T{Name: "foo"}
+
+    sptr := &T{Name: "bar"}
+  \end{minted}
+\end{itemize}

@@ -1,0 +1,97 @@
+\chapter{Slice}
+\section{nil 是一个有效的 slice}
+\texttt{nil} 是一个有效的长度为 \texttt{0} 的 \texttt{slice} ，这意味着，不应明确返回长度为零的切片。
+应该返回 \texttt{nil} 来代替。
+\begin{itemize}[leftmargin=4em]
+\item 错误用法
+
+  \begin{minted}{go}
+    if x == "" {
+    	return []int{}
+    }
+  \end{minted}
+\item 正确用法
+
+  \begin{minted}{go}
+    if x == "" {
+    	return nil
+    }
+  \end{minted}
+\end{itemize}
+
+要检查切片是否为空，请始终使用 \texttt{len(s) == 0} 。而非 \texttt{nil} 。
+\begin{itemize}[leftmargin=4em]
+\item 错误用法
+
+  \begin{minted}{go}
+    func isEmpty(s []string) bool {
+    	return s == nil
+    }
+  \end{minted}
+\item 正确用法
+
+  \begin{minted}{go}
+    func isEmpty(s []string) bool {
+    	return len(s) == 0
+    }
+  \end{minted}
+\end{itemize}
+
+零值切片可立即使用，无需调用 \texttt{make} 创建。
+\begin{itemize}[leftmargin=4em]
+\item 错误用法
+
+  \begin{minted}{go}
+    nums := []int{}
+    // or, nums := make([]int)
+
+    if add1 {
+    	nums = append(nums, 1)
+    }
+
+    if add2 {
+    	nums = append(nums, 2)
+    }
+  \end{minted}
+\item 正确用法
+
+  \begin{minted}{go}
+    var nums []int
+
+    if add1 {
+    	nums = append(nums, 1)
+    }
+
+    if add2 {
+    	nums = append(nums, 2)
+    }
+  \end{minted}
+\end{itemize}
+
+记住，虽然 \texttt{nil} 切片是有效的切片，但它不等于长度为 \texttt{0} 的切片（一个为 \texttt{nil} ，另一个不是），
+并且在不同的情况下（例如序列化），这两个切片的处理方式可能不同。
+
+\section{追加时优先指定切片容量}
+在尽可能的情况下，在初始化要追加的切片时为make()提供一个容量值。
+\begin{itemize}[leftmargin=4em]
+\item 错误用法
+
+  \begin{minted}{go}
+    for n := 0; n < b.N; n++ {
+    	data := make([]int, 0)
+    	for k := 0; k < size; k++{
+    		data = append(data, k)
+    	}
+    }
+  \end{minted}
+\item 正确用法
+
+  \begin{minted}{go}
+    for n := 0; n < b.N; n++ {
+    	data := make([]int, 0, size)
+    	for k := 0; k < size; k++{
+    		data = append(data, k)
+    	}
+    }
+  \end{minted}
+\end{itemize}

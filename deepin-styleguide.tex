@@ -1,6 +1,6 @@
 \documentclass[UTF8,a4paper,oneside]{ctexbook}
 
-\usepackage{indentfirst} 
+\usepackage{indentfirst}
 \setlength{\parindent}{2em}
 
 \usepackage[margin=1in]{geometry}
@@ -28,6 +28,8 @@
 {\huge\bfseries}
 {\thechapter\hspace{20pt}\textcolor{deepin_black}{|}\hspace{20pt}}{0pt}
 {\huge\bfseries}
+
+\usepackage{enumitem}
 
 \makeatletter
 \renewcommand{\section}{
@@ -80,7 +82,7 @@
 \setlength{\parskip}{0.5em}
 \makeatletter
 \@addtoreset{chapter}{part}
-\makeatother  
+\makeatother
 \title{deepin 开源项目风格指南}
 
 \date{\today}
@@ -115,5 +117,6 @@
 
 \input{deepin/index.tex}
 \input{qt/index.tex}
+\input{golang/index.tex}
 
 \end{document}

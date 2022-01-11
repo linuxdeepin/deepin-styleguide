@@ -1,0 +1,129 @@
+\chapter{命名}
+变量名和函数使用驼峰命名法，首字母小写，但如果需要导出，首字母则应该大写。名称应能准确表达其含义，且容易记忆。
+
+代码中应避免使用全局变量，若要使用全局变量，并且无需对外导出时，则在变量名前添加 \texttt{'\_'} 。
+
+\begin{itemize}[leftmargin=4em]
+\item 错误用法
+
+  \begin{minted}{go}
+    var count int
+
+    func calc_cost() {
+    	var Total int
+    }
+  \end{minted}
+\item 正确用法
+
+  \begin{minted}{go}
+    var _count int
+
+    func calcCost() {
+    	var total int
+    }
+  \end{minted}
+\end{itemize}
+
+\section{避免使用内置名称}
+Go 语言规范概述了几个内置的，不应在 Go 项目中使用的名称标识 \texttt{predeclared identifiers} 。
+
+根据上下文的不同，将这些标识符作为名称重复使用， 将在当前作用域（或任何嵌套作用域）中隐藏原始标识符，或者混淆代码。
+在最好的情况下，编译器会报错；在最坏的情况下，这样的代码可能会引入潜在的、难以恢复的错误。
+\begin{itemize}[leftmargin=4em]
+\item 错误用法
+
+  \begin{minted}[breaklines]{go}
+    var error string
+    // `error` 作用域隐式覆盖
+    // or
+
+    func handleErrorMessage(error string) {
+    	// `error` 作用域隐式覆盖
+    }
+
+    type Foo struct {
+    	// 虽然这些字段在技术上不构成阴影，但`error`或`string`字符串的重映射现在是不明确的。
+    	error  error
+    	string string
+    }
+
+    func (f Foo) Error() error {
+    	// `error` 和 `f.error` 在视觉上是相似的
+    	return f.error
+    }
+
+    func (f Foo) String() string {
+    	// `string` and `f.string` 在视觉上是相似的
+    	return f.string
+    }
+  \end{minted}
+\item 正确用法
+
+  \begin{minted}{go}
+    var errorMessage string
+    // `error` 指向内置的非覆盖
+    // or
+
+    func handleErrorMessage(msg string) {
+    	// `error` 指向内置的非覆盖
+    }
+    type Foo struct {
+    	// `error` and `string` 现在是明确的。
+    	err error
+    	str string
+    }
+
+    func (f Foo) Error() error {
+    	return f.err
+    }
+
+    func (f Foo) String() string {
+    	return f.str
+    }
+  \end{minted}
+\end{itemize}
+
+注意，编译器在使用预先分配的标识符时不会生成错误，但是诸如 \texttt{go vet} 之类的工具会正确地指出这些和其它情况下的隐式问题。
+
+\section{常量}
+常量因使用蛇形命名法，全局常量需要全部大写。无需对外导出的全局常量，须在常量名前添加 \texttt{'\_'} 。
+
+\begin{itemize}[leftmargin=4em]
+\item 错误用法
+
+  \begin{minted}{go}
+    const maxBufSize = 1024
+    const Version = "1.0"
+  \end{minted}
+\item 正确用法
+
+  \begin{minted}{go}
+    const _MAX_BUF_SIZE = 1024
+    const VERSION = "1.0"
+  \end{minted}
+\end{itemize}
+
+\section{包名}
+包名需满足以下规则：
+\begin{itemize}[leftmargin=4em]
+\item 全部小写，没有大写或下划线及连接符；
+\item 包名应避免重复；
+\item 简短且简洁，容易记忆；
+\item 不用复数；
+\item 避免使用 \texttt{common/util/shared/lib} 这类模糊不清的包名。
+\end{itemize}
+
+如：
+\begin{itemize}[leftmargin=4em]
+\item 错误用法
+
+  \begin{minted}{go}
+    package URL
+    package urls
+  \end{minted}
+\item 正确用法
+
+  \begin{minted}{go}
+    package url
+  \end{minted}
+\end{itemize}

@@ -1,0 +1,18 @@
+\chapter{Import}
+包导入时应避免使用别名，但以下情况必须使用别名：
+\begin{itemize}[leftmargin=4em]
+\item 包名称与导入路径的最后一个元素不匹配；
+\item 包名称与已有的包重复。
+\end{itemize}
+
+如：
+\begin{minted}[xleftmargin=3.5em]{go}
+  import (
+  	"net/http"
+
+  	myhttp "example.com/http"
+  	client "example.com/client-go"
+  )
+\end{minted}
+
+别名的命名规范与包名一致。

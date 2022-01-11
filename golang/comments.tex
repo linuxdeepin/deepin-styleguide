@@ -1,0 +1,28 @@
+\chapter{注释}
+使用 \texttt{'//'} 的语法添加注释，允许多行。注释推荐使用单独的行，在对应语句之上，避免使用行内注释。
+
+所有对外导出的常量、变量、结构体、方法、接口等都应添加注释。
+
+\begin{itemize}[leftmargin=4em]
+\item 错误用法
+
+  \begin{minted}[breaklines]{go}
+    const (
+    	STATE_SUCCESS = iota + 1 // Indicates that the task has been completed and successfully
+    	STATE_FAILED
+    )
+  \end{minted}
+\item 正确用法
+
+  \begin{minted}{go}
+    const (
+    	// Indicates that the task has been completed and successfully.
+    	STATE_SUCCESS = iota + 1
+    	// Indicates that the task has been completed, but failure.
+    	STATE_FAILED
+    )
+  \end{minted}
+\end{itemize}
+
+\section{TODO 注释}
+具体参见 \textbf{Qt} 中的 \textbf{TODO 注释}规则。

@@ -1,0 +1,198 @@
+\chapter{变量}
+\section{变量声明}
+使用标准 \texttt{var} 关键字。请勿指定类型，除非它与表达式的类型不同。
+\begin{itemize}[leftmargin=4em]
+\item 错误用法
+
+  \begin{minted}{go}
+    var _s string = F()
+
+    func F() string { return "A" }
+  \end{minted}
+\item 正确用法
+
+  \begin{minted}{go}
+    // 由于 F 已经明确了返回一个字符串类型，因此我们没有必要显式指定 _s 的类型
+    var _s = F()
+
+    func F() string { return "A" }
+  \end{minted}
+\end{itemize}
+
+如果表达式的类型与所需的类型不完全匹配，请指定类型。如：
+\begin{minted}[xleftmargin=3.5em]{go}
+  type myError struct{}
+
+  func (myError) Error() string { return "error" }
+
+  func F() myError { return myError{} }
+
+  var _e error = F()
+\end{minted}
+
+如果将变量明确设置为某个值，则应使用短变量声明形式 (\texttt{:=})。
+\begin{itemize}[leftmargin=4em]
+\item 错误用法
+
+  \begin{minted}{go}
+    var s = "foo"
+  \end{minted}
+\item 正确用法
+
+  \begin{minted}{go}
+    s := "foo"
+  \end{minted}
+\end{itemize}
+
+但是，在某些情况下， \texttt{var} 使用关键字时默认值会更清晰。例如，声明空切片。
+\begin{itemize}[leftmargin=4em]
+\item 错误用法
+
+  \begin{minted}{go}
+    func f(list []int) {
+    	filtered := []int{}
+    	for _, v := range list {
+    		if v > 10 {
+    			filtered = append(filtered, v)
+    		}
+    	}
+    }
+  \end{minted}
+\item 正确用法
+
+  \begin{minted}{go}
+    func f(list []int) {
+    	var filtered []int
+    	for _, v := range list {
+    		if v > 10 {
+    			filtered = append(filtered, v)
+    		}
+    	}
+    }
+  \end{minted}
+\end{itemize}
+
+\section{缩小变量作用域}
+如果有可能，尽量缩小变量作用范围。除非它与减少嵌套的规则冲突。
+\begin{itemize}[leftmargin=4em]
+\item 错误用法
+
+  \begin{minted}{go}
+    err := ioutil.WriteFile(name, data, 0644)
+    if err != nil {
+    	return err
+    }
+  \end{minted}
+\item 正确用法
+
+  \begin{minted}{go}
+    if err := ioutil.WriteFile(name, data, 0644); err != nil {
+    	return err
+    }
+  \end{minted}
+\end{itemize}
+
+如果需要在 if 之外使用函数调用的结果，则不应尝试缩小范围。
+\begin{itemize}[leftmargin=4em]
+\item 错误用法
+
+  \begin{minted}{go}
+    if data, err := ioutil.ReadFile(name); err == nil {
+    	err = cfg.Decode(data)
+    	if err != nil {
+    		return err
+    	}
+
+    	fmt.Println(cfg)
+    	return nil
+    } else {
+    	return err
+    }
+  \end{minted}
+\item 正确用法
+
+  \begin{minted}{go}
+    data, err := ioutil.ReadFile(name)
+    if err != nil {
+    	return err
+    }
+
+    if err := cfg.Decode(data); err != nil {
+    	return err
+    }
+
+    fmt.Println(cfg)
+    return nil
+  \end{minted}
+\end{itemize}
+
+\section{使用原始字符串字面值}
+\texttt{Go} 支持使用原始字符串字面值，也就是 '`' 来表示原生字符串，在需要转义的场景下，我们应该尽量使用这种方案来替换。
+
+可以跨越多行并包含引号。使用这些字符串可以避免更难阅读的手工转义的字符串。
+
+\begin{itemize}[leftmargin=4em]
+\item 错误用法
+
+  \begin{minted}{go}
+    wantError := "unknown name:\"test\""
+  \end{minted}
+\item 正确用法
+
+  \begin{minted}{go}
+    wantError := `unknown error:"test"`
+  \end{minted}
+\end{itemize}
+
+\section{避免可变全局变量}
+使用选择依赖注入方式避免改变全局变量；既适用于函数指针又适用于其它值类型。
+\begin{itemize}[leftmargin=4em]
+\item 错误用法
+
+  \begin{minted}{go}
+    // sign.go
+    var _timeNow = time.Now
+    func sign(msg string) string {
+    	now := _timeNow()
+    	return signWithTime(msg, now)
+    }
+
+
+    // sign_test.go
+    func TestSign(t *testing.T) {
+    	oldTimeNow := _timeNow
+    	_timeNow = func() time.Time {
+    		return someFixedTime
+    	}
+    	defer func() { _timeNow = oldTimeNow }()
+    	assert.Equal(t, want, sign(give))
+    }
+  \end{minted}
+\item 正确用法
+
+  \begin{minted}{go}
+    // sign.go
+    type signer struct {
+    	now func() time.Time
+    }
+    func newSigner() *signer {
+    	return &signer{
+    		now: time.Now,
+    	}
+    }
+    func (s *signer) Sign(msg string) string {
+    	now := s.now()
+    	return signWithTime(msg, now)
+    }
+
+
+    // sign_test.go
+    func TestSigner(t *testing.T) {
+    	s := newSigner()
+    	s.now = func() time.Time {
+    		return someFixedTime
+    	}
+    	assert.Equal(t, want, s.Sign(give))
+    }
+  \end{minted}
+\end{itemize}

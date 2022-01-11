@@ -1,0 +1,117 @@
+\chapter{分组}
+Go 语言支持将相似的声明放在一个组内，适用于常量、变量和类型声明，不要将不相关的声明放在一组。
+
+\begin{itemize}[leftmargin=4em]
+\item 错误用法
+
+  \begin{minted}{go}
+    const _STATE_SUCESS = 1
+    const _STATE_FAILED = 2
+  \end{minted}
+\item 正确用法
+
+  \begin{minted}{go}
+    const (
+    	_STATE_SUCESS = iota + 1
+    	_STATE_FAILED
+    )
+  \end{minted}
+\end{itemize}
+
+分组使用的位置没有限制，例如：你可以在函数内部使用它们。
+\begin{itemize}[leftmargin=4em]
+\item 错误用法
+
+  \begin{minted}{go}
+    func calcCost() {
+    	var total int
+    	idx := 0
+    }
+  \end{minted}
+\item 正确用法
+
+  \begin{minted}{go}
+    func calcCost() {
+    	var (
+    		total int
+    		idx int
+    	)
+    }
+  \end{minted}
+\end{itemize}
+
+\section{Import}
+分组对 \texttt{import} 也同样适用，但标准库和第三方库需要隔开，例如：
+\begin{itemize}[leftmargin=4em]
+\item 错误用法
+
+  \begin{minted}{go}
+    import (
+    	"os"
+    	"os/exec"
+    	"example.com/client-go"
+    	"example.com/http"
+    )
+  \end{minted}
+\item 正确用法
+
+  \begin{minted}{go}
+    import (
+    	"os"
+    	"os/exec"
+
+    	"example.com/client-go"
+    	"example.com/http"
+    )
+  \end{minted}
+\end{itemize}
+
+推荐使用 \texttt{goimports} 导入包，其会进行自动分组。
+
+\section{函数}
+函数在编写时，也应按照以下原则进行分组：
+\begin{itemize}[leftmargin=4em]
+\item 函数应在 \texttt{struct、const、var} 等定义的后面；
+\item 导出的函数应先出现在文件中；
+\item 相同接受者的函数应在一起；
+\item 普通工具函数应在文件末尾；
+\item 函数应按调用顺序排序。
+\end{itemize}
+
+如：
+\begin{itemize}[leftmargin=4em]
+\item 错误用法
+
+  \begin{minted}{go}
+    func (s *something) Cost() {
+    	return calcCost(s.weights)
+    }
+
+    type something struct{ ... }
+
+    func calcCost(n []int) int {...}
+
+    func (s *something) Stop() {...}
+
+    func newSomething() *something {
+    	return &something{}
+    }
+  \end{minted}
+\item 正确用法
+
+  \begin{minted}{go}
+    type something struct{ ... }
+
+    func newSomething() *something {
+    	return &something{}
+    }
+
+    func (s *something) Cost() {
+    	return calcCost(s.weights)
+    }
+
+    func (s *something) Stop() {...}
+
+    func calcCost(n []int) int {...}
+  \end{minted}
+\end{itemize}

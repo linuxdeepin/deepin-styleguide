@@ -1,0 +1,653 @@
+\chapter{经验技巧}
+\section{优先使用 strconv}
+将数字、布尔值转换为字符串或从字符串转换时， \texttt{strconv} 速度比 \texttt{fmt} 快。
+\begin{itemize}[leftmargin=4em]
+\item 错误用法
+
+  \begin{minted}{go}
+    for i := 0; i < b.N; i++ {
+    	s := fmt.Sprint(rand.Int())
+    }
+  \end{minted}
+\item 正确用法
+
+  \begin{minted}{go}
+    for i := 0; i < b.N; i++ {
+    	s := strconv.Itoa(rand.Int())
+    }
+  \end{minted}
+\end{itemize}
+
+\section{避免字符串到字节的转换}
+不要反复从固定字符串创建字节 \texttt{slice} 。相反，请执行一次转换并捕获结果。
+\begin{itemize}[leftmargin=4em]
+\item 错误用法
+
+  \begin{minted}{go}
+    for i := 0; i < b.N; i++ {
+    	w.Write([]byte("Hello world"))
+    }
+  \end{minted}
+\item 正确用法
+
+  \begin{minted}{go}
+    data := []byte("Hello world")
+    for i := 0; i < b.N; i++ {
+    	w.Write(data)
+    }
+  \end{minted}
+\end{itemize}
+
+\section{零值 Mutex 是有效的}
+零值 \texttt{sync.Mutex} 和 \texttt{sync.RWMutex} 是有效的。所以指向 \texttt{mutex} 的指针基本是不必要的。
+\begin{itemize}[leftmargin=4em]
+\item 错误用法
+
+  \begin{minted}{go}
+    mu := new(sync.Mutex)
+    mu.Lock()
+  \end{minted}
+\item 正确用法
+
+  \begin{minted}{go}
+    var mu sync.Mutex
+    mu.Lock()
+  \end{minted}
+\end{itemize}
+
+如果你使用结构体指针， \texttt{mutex} 应该作为结构体的非指针字段。即使该结构体不被导出，也不要直接把 \texttt{mutex} 嵌入到结构体中。
+\begin{itemize}[leftmargin=4em]
+\item 错误用法
+
+  \begin{minted}{go}
+    // Mutex 字段， Lock 和 Unlock 方法是 SMap 导出的 API 中不刻意说明的一部分
+    type SMap struct {
+    	sync.Mutex
+
+    	data map[string]string
+    }
+
+    func NewSMap() *SMap {
+    	return &SMap{
+    		data: make(map[string]string),
+    	}
+    }
+
+    func (m *SMap) Get(k string) string {
+    	m.Lock()
+    	defer m.Unlock()
+
+    	return m.data[k]
+    }
+  \end{minted}
+\item 正确用法
+
+  \begin{minted}{go}
+    // mutex 及其方法是 SMap 的实现细节，对其调用者不可见
+    type SMap struct {
+    	mu sync.Mutex
+
+    	data map[string]string
+    }
+
+    func NewSMap() *SMap {
+    	return &SMap{
+    		data: make(map[string]string),
+    	}
+    }
+
+    func (m *SMap) Get(k string) string {
+    	m.mu.Lock()
+    	defer m.mu.Unlock()
+
+    	return m.data[k]
+    }
+  \end{minted}
+\end{itemize}
+
+\section{在边界处拷贝 Slices 和 Maps}
+\texttt{Slices} 和 \texttt{Maps} 包含了指向底层数据的指针，因此在需要复制它们时要特别注意。
+
+接收 \texttt{Slices} 和 \texttt{Maps} 需注意，当 \texttt{map} 或 \texttt{slice} 作为函数参数传入时，如果存储了对它们的引用，则用户可以对其进行修改。
+\begin{itemize}[leftmargin=4em]
+\item 错误用法
+
+  \begin{minted}{go}
+    func (d *Driver) SetTrips(trips []Trip) {
+    	d.trips = trips
+    }
+
+    trips := ...
+    d1.SetTrips(trips)
+
+    // 你是要修改 d1.trips 吗？
+    trips[0] = ...
+  \end{minted}
+\item 正确用法
+
+  \begin{minted}{go}
+    func (d *Driver) SetTrips(trips []Trip) {
+    	d.trips = make([]Trip, len(trips))
+    	copy(d.trips, trips)
+    }
+
+    trips := ...
+    d1.SetTrips(trips)
+
+    // 这里我们修改 trips[0]，但不会影响到 d1.trips
+    trips[0] = ...
+  \end{minted}
+\end{itemize}
+
+返回 \texttt{Slices} 或 \texttt{Maps} 同样需注意，用户对暴露内部状态的 \texttt{map} 或 \texttt{slice} 可修改。
+\begin{itemize}[leftmargin=4em]
+\item 错误用法
+
+  \begin{minted}{go}
+    type Stats struct {
+    	mu sync.Mutex
+
+    	counters map[string]int
+    }
+
+
+
+    // Snapshot 返回当前状态。
+    func (s *Stats) Snapshot() map[string]int {
+    	s.mu.Lock()
+    	defer s.mu.Unlock()
+
+    	return s.counters
+    }
+
+    // snapshot 不再受互斥锁保护
+    // 因此对 snapshot 的任何访问都将受到数据竞争的影响
+    // 影响 stats.counters
+    snapshot := stats.Snapshot()
+  \end{minted}
+\item 正确用法
+
+  \begin{minted}{go}
+    type Stats struct {
+    	mu sync.Mutex
+
+    	counters map[string]int
+    }
+
+    func (s *Stats) Snapshot() map[string]int {
+    	s.mu.Lock()
+    	defer s.mu.Unlock()
+
+    	result := make(map[string]int, len(s.counters))
+    	for k, v := range s.counters {
+    		result[k] = v
+    	}
+    	return result
+    }
+
+    // snapshot 现在是一个拷贝
+    snapshot := stats.Snapshot()
+  \end{minted}
+\end{itemize}
+
+\section{使用 time 处理时间}
+时间处理很复杂。关于时间的错误假设通常包括以下几点。
+\begin{enumerate}[leftmargin=4em]
+\item 一天有 24 小时；
+\item 一小时有 60 分钟；
+\item 一周有七天；
+\item 一年 365 天；
+\item 还有更多。
+\end{enumerate}
+
+例如，1 表示在一个时间点上加上 24 小时并不总是产生一个新的日历日。
+
+因此，在处理时间时始终使用 "time" 包，因为它有助于以更安全、更准确的方式处理这些不正确的假设。
+
+\textbf{使用 time.Time 表达瞬时时间：}在处理时间的瞬间时使用 \texttt{time.Time} ，在比较、添加或减去时间时使用 \texttt{time.Time} 中的方法。
+\begin{itemize}[leftmargin=4em]
+\item 错误用法
+
+  \begin{minted}{go}
+    func isActive(now, start, stop int) bool {
+    	return start <= now && now < stop
+    }
+  \end{minted}
+\item 正确用法
+
+  \begin{minted}[breaklines]{go}
+    func isActive(now, start, stop time.Time) bool {
+    	return (start.Before(now) || start.Equal(now)) && now.Before(stop)
+    }
+  \end{minted}
+\end{itemize}
+
+使用 \texttt{time.Duration} 表达时间段，在处理时间段时也使用 \texttt{time.Duration} 。
+
+\begin{itemize}[leftmargin=4em]
+\item 错误用法
+
+  \begin{minted}{go}
+    func poll(delay int) {
+    	for {
+    		// ...
+    		time.Sleep(time.Duration(delay) * time.Millisecond)
+    	}
+    }
+    poll(10) // 是几秒钟还是几毫秒?
+  \end{minted}
+\item 正确用法
+
+  \begin{minted}{go}
+    func poll(delay time.Duration) {
+    	for {
+    		// ...
+    		time.Sleep(delay)
+    	}
+    }
+    poll(10*time.Second)
+  \end{minted}
+\end{itemize}
+
+回到第一个例子，在一个时间瞬间加上 24 小时，我们用于添加时间的方法取决于意图。
+如果我们想要下一个日历日(当前天的下一天)的同一个时间点，我们应该使用 \texttt{Time.AddDate} 。
+但是，如果我们想保证某一时刻比前一时刻晚 24 小时，我们应该使用 \texttt{Time.Add} 。
+
+\begin{minted}[xleftmargin=2em]{go}
+  newDay := t.AddDate(0 /* years */, 0 /* months */, 1 /* days */)
+  maybeNewDay := t.Add(24 * time.Hour)
+\end{minted}
+
+对外部系统使用 \texttt{time.Time} 和 \texttt{time.Duration} ，尽可能在与外部系统的交互中使用 \texttt{time.Duration} 和 \texttt{time.Time} 例如 :
+\begin{itemize}
+\item \texttt{Command-line} 标志: \texttt{flag} 通过 \texttt{time.ParseDuration} 支持 \texttt{time.Duration} ；
+\item \texttt{JSON: encoding/json} 通过其 \texttt{UnmarshalJSON method} 方法支持将 \texttt{time.Time} 编码为 \texttt{RFC 3339} 字符串；
+\item \texttt{SQL: database/sql} 支持将 \texttt{DATETIME} 或 \texttt{TIMESTAMP} 列转换为 \texttt{time.Time} ，如果底层驱动程序支持则返回；
+\item \texttt{YAML: gopkg.in/yaml.v2} 支持将 \texttt{time.Time} 作为 \texttt{RFC 3339} 字符串，并通过 \texttt{time.ParseDuration} 支持 \texttt{time.Duration} 。
+\end{itemize}
+
+当不能在这些交互中使用 \texttt{time.Duration} 时，请使用 \texttt{int} 或 \texttt{float64}，并在字段名称中包含单位。
+例如，由于 \texttt{encoding/json} 不支持 \texttt{time.Duration} ，因此该单位包含在字段的名称中。
+
+\begin{itemize}[leftmargin=4em]
+\item 错误用法
+
+  \begin{minted}{go}
+    // {"interval": 2}
+    type Config struct {
+    	Interval int `json:"interval"`
+    }
+  \end{minted}
+\item 正确用法
+
+  \begin{minted}{go}
+    // {"intervalMillis": 2000}
+    type Config struct {
+    	IntervalMillis int `json:"intervalMillis"`
+    }
+  \end{minted}
+\end{itemize}
+
+当在这些交互中不能使用 \texttt{time.Time} 时，除非达成一致，否则使用 \texttt{string} 和 \texttt{RFC 3339} 中定义的格式时间戳。
+默认情况下， \texttt{Time.UnmarshalText} 使用此格式，并可通过 \texttt{time.RFC3339} 在 \texttt{Time.Format} 和 \texttt{time.Parse} 中使用。
+
+尽管这在实践中并不成问题，但请记住，"time" 包不支持解析闰秒时间戳，也不在计算中考虑闰秒。
+如果比较两个时间瞬间，则差异将不包括这两个瞬间之间可能发生的闰秒。
+
+\section{使用 crypto random 生成随机数}
+不要使用 \texttt{math/rand} 生成随机数，甚至是一次性的。没有随机种子，生成器的结果是完全可预测的。
+即便使用 \texttt{time.Nanoseconds} 初始化随机种子，也只能产生有限的几位熵。
+
+相反，使用 \texttt{crypto/rand} 生成的随机数，使用的是内核的 \texttt{/dev/urandom} 设备，更加安全可靠。
+
+\begin{minted}[xleftmargin=2em]{go}
+import (
+	"crypto/rand"
+	// "encoding/base64"
+	// "encoding/hex"
+	"fmt"
+)
+
+func Key() string {
+	buf := make([]byte, 16)
+	_, err := rand.Read(buf)
+	if err != nil {
+		panic(err)  // out of randomness, should never happen
+	}
+	return fmt.Sprintf("%x", buf)
+	// or hex.EncodeToString(buf)
+	// or base64.StdEncoding.EncodeToString(buf)
+}
+\end{minted}
+
+\section{整数安全}
+整数在使用时应注意有无符号，避免出现以下错误：
+\begin{itemize}[leftmargin=4em]
+\item 无符号整数运算时出现反转
+
+  \textbf{反转} 是指无法用无符号整数表示的运算结果，这个结果将会根据该类型可以表示的最大值加1执行求模操作。
+\item 有符号整数运算时出现溢出
+
+  \textbf{整数溢出}是一种未定义的行为，意味着编译器在处理有符号整数溢出时具有很多选择。
+\item 整型转换时出现截断错误
+
+  将一个较大整型转换为较小整型，并且该数的原值超出较小整型的表示范围，就会发生截断错误，原值的低位被保留而高位被丢弃。
+  截断错误会引起数据丢失，甚至可能引发安全问题。
+\item 整型转换时出现符号错误
+
+  有时从带符号整型向无符号整型转换时，最高位会丧失作为符号位的功能，即产生符号丢失但数据不丢失的问题，从而数据失去原来的含义。
+  \begin{itemize}
+  \item 带符号整型数的值非负时，它向无符号整型转换后，值不变；
+  \item 带符号整型数的值为负时，它向无符号整型转换后，结果通常是一个非常大的正数；
+  \end{itemize}
+\end{itemize}
+
+整数通常会在以下操作符中被使用：\texttt{+、-、*、/、\%、++、--、=、+=、-=、*=、/=、\%=、<<=、<<、–} 。
+最后的\texttt{'-'} 表示一元否定（\texttt{unary negation}）。
+
+将运算结果用于以下之一的用途，应防止反转、溢出和截断：
+\begin{itemize}[leftmargin=4em]
+\item 作为数组索引；
+\item 作为对象的长度或者大小；
+\item 作为数组的边界（如作为循环计数器）。
+\end{itemize}
+
+如：
+\begin{itemize}[leftmargin=4em]
+\item 错误用法
+
+  \begin{minted}[breaklines]{go}
+    func main() {
+    	// 反转
+    	var a, b uint64 = math.MaxUint64, 1
+    	sum(a, b)
+
+    	// 溢出
+    	var a1, b1 int32 = math.MaxInt32, 1
+    	foo(a1, b1)
+    }
+
+    // 反转
+    // 下面代码中a和b两者相加时会存在内存数量不足，导致产生无符号整数反转现象。
+    func sum(a, b uint64) (s uint64) {
+    	s = a + b
+    }
+
+    // 溢出
+    // 下面代码中a和b两者相加时可能会产生有符号溢出。
+    func foo(a, b int32) {
+    	c := a + b
+    	fmt.Println(c)    // output: -2147483648
+    }
+
+    // 截断
+    // 下面代码把它a强制转换为16位有符号整数时，会导致数据被截断。
+    func foo1() {
+    	var a int32 = math.MaxInt32
+    	b := int16(a)
+    	fmt.Println(b)    // output: -1
+    }
+
+    // 符号错误
+    // 下面代码假设a为32位有符号的最小整数，把它转换为32位无符号整数时，就会发生符号丢失现象。
+    func foo2() {
+    	var a int32 = math.MinInt32
+    	b := uint32(a) // 【错误】产生符号丢失
+    	fmt.Println("a =", a,", b =", b)
+    }
+    // 输出：a = -2147483648, b = 2147483648
+  \end{minted}
+\item 正确用法
+
+  \begin{minted}[breaklines]{go}
+    // 反转
+    // 在运算之前进行校验，确保无符号整数运算时不会出现反转。
+    func sum(a, b uint64) {
+    	var c uint64
+    	if math.MaxUint64-a < b {
+    		// error
+    	} else {
+    		c = a + b
+    	}
+    }
+
+    // 溢出
+    // 在有符号整数运算之前进行校验，确保不会产生溢出。
+    func foo(a, b int32) {
+    	var c int32
+    	if (a > 0 && b > (math.MaxInt32-a)) || (b < 0 && a < (math.MinInt32-b)) {
+    		// error
+    	} else {
+    		c = a + b
+    	}
+    }
+
+    // 截断
+    // 当不同数据类型强制转化时需要校验数据的范围，以确定是否会发生数据的丢失。
+    func foo1() {
+    	var a int32 = math.MaxInt32
+    	var b int16
+
+    	if a < math.MinInt16 || a > math.MaxInt16 {
+    		// error
+    	} else {
+    		b = int16(a)
+    	}
+    }
+
+    // 符号错误
+    // 在将有符号数向无符号数转换前，进行数据校验。
+    func foo2() {
+    	var a int32 = math.MinInt32
+    	var b uint32
+
+    	// 【修改】添加校验以确保不会发生符号错误
+    	if a < 0 {
+    		// 错误处理
+    	} else {
+    		b = uint32(a)
+    		fmt.Println("a=", a, ",b=", b)
+    	}
+    }
+  \end{minted}
+\end{itemize}
+
+\section{确保每个协程都能退出}
+协程 \texttt{Goroutine} 是 Go 语言并行设计的核心，启动一个协程就会做一个入栈操作，在系统不退出的情况下，
+协程也没有设置退出条件，则相当于协程失去了控制，它占用的资源无法回收，可能会导致内存泄露。
+
+\begin{itemize}[leftmargin=4em]
+\item 错误用法
+
+  下面代码启动了两个协程，每个协程都是循环向屏幕上打印信息， \texttt{在main()} 不退出的情况，
+  且协程也没有设置退出条件，则导致协程所占用的资源以及启动协程的栈信息无法得到释放。
+  \begin{minted}{go}
+    package main
+
+    import (
+    	"fmt"
+    	"time"
+    )
+
+    // 【错误】协程没有设置退出条件
+    func doWaiter(name string, second int) {
+    	for {
+    		time.Sleep(time.Duration(second) * time.Second)
+    		fmt.Println(name, " is ready!")
+    	}
+    }
+
+    func main() {
+    	go doWaiter("Tea", 2)
+    	go doWaiter("Coffee", 1)
+
+    	fmt.Println("main() is waiting....")
+    	time.Sleep(5 * time.Second)
+    }
+  \end{minted}
+\item 正确用法
+
+  通过 \texttt{channel} 机制对每个协程都设置退出条件，从而达到回收资源的目的，其中 \texttt{channel} 是一个消息队列通道。
+  \begin{minted}{go}
+    package main
+
+    import (
+    	"fmt"
+    	"time"
+    )
+
+    // 【修改】为每个协程增加一个channel，用来控制退出
+    func doWaiter(name string, second int, signal chan int) {
+    	for {
+    		select {
+    		case <-time.Tick(time.Duration(second) * time.Second):
+    			fmt.Println(name, " is ready!")
+    		case <-signal:
+    			fmt.Println(name, " close goroutine.")
+    			return
+    		}
+    	}
+    }
+
+    func main() {
+    	var signal1 = make(chan int) // 【修改】增加两个channel
+    	var signal2 = make(chan int)
+
+    	// 【修改】关闭channel
+    	defer close(signal1)
+    	defer close(signal2)
+
+    	go doWaiter("Tea", 2, signal1)
+    	go doWaiter("Coffee", 1, signal2)
+
+    	fmt.Println("main() is waiting....")
+    	time.Sleep(4 * time.Second)
+
+    	// 【修改】设置退出条件
+    	signal1 <- 1
+    	signal2 <- 1
+    	time.Sleep(time.Second)
+    }
+  \end{minted}
+\end{itemize}
+
+\section{禁止在闭包中直接调用循环变量}
+Go 语言的特性决定了它会出现其它语言不存在的一些问题，比如在循环中启动协程，
+当协程中使用到了循环的索引值，往往会出现意想不到的问题，通常需要程序员显式地进行变量调用。
+\begin{minted}[xleftmargin=2em,breaklines]{go}
+  package main
+
+  import (
+  	"fmt"
+  )
+
+  func main() {
+  	for i := 0; i < limit; i++ {
+  		go func() {
+  			fmt.Println("example one:", i)
+  		}() // 【注】：错误做法
+  		go func(i int) {
+  			fmt.Println("Ex. two:", i)
+  		}(i) // 【注】：正确做法
+  	}
+  }
+\end{minted}
+
+\begin{itemize}[leftmargin=4em]
+\item 错误用法
+
+  下面代码输出结果为“5 5 5 5 5”，由于多个协程同时使用变量i产生了数据竞争，这个结果并不是我们所期望的。
+  \begin{minted}[breaklines]{go}
+    package main
+
+    import (
+    	"fmt"
+    	"runtime"
+    	"sync"
+    )
+
+    func main() {
+    	runtime.GOMAXPROCS(runtime.NumCPU())
+    	var group sync.WaitGroup
+
+    	for i := 0; i < 5; i++ {
+    		group.Add(1)
+    		go func() {
+    			defer group.Done()
+    			fmt.Printf("%-2d", i) //【错误】这里打印的i不是所期望的
+    		}()
+    	}
+    	group.Wait()
+    }
+  \end{minted}
+\item 正确用法
+
+  对循环语句的协程需要进行显式地索引变量调用，这样才能得到类似“0 1 2 3 4”期望结果。
+  \begin{minted}[breaklines]{go}
+    package main
+
+    import (
+    	"fmt"
+    	"runtime"
+    	"sync"
+    )
+
+    func main() {
+    	runtime.GOMAXPROCS(runtime.NumCPU())
+    	var group sync.WaitGroup
+
+    	for i := 0; i < 5; i++ {
+    		group.Add(1)
+    		go func(j int) {
+    			defer group.Done()
+    			fmt.Printf("%-2d", j) // 【修改】闭包内部使用局部变量
+    		}(i)  // 【修改】把循环变量显式地传给协程
+    	}
+    	group.Wait()
+    }
+  \end{minted}
+\end{itemize}
+
+\section{不要相信传入的参数}
+所有对外接口，都应对传入的参数进行检查，确保传入的参数是合法的和安全的。
+\begin{itemize}[leftmargin=4em]
+\item 错误用法
+
+  启动 bluetooth.service 的同时，会创建用户 'testsad1' 并启动 ssh 服务。
+  这样恶意用户就可访问此系统，而且拥有root权限。
+  \begin{minted}[breaklines]{go}
+    package main
+
+    import (
+    	"fmt"
+    	"os/exec"
+    	"regexp"
+    )
+
+    func main() {
+    	if err := launchService1("bluetooth.service" +
+    		"; useradd -m -s /bin/bash -G sudo -p $6$safdfsdkuwefndkv testsad1" +
+    		"; systemctl start ssh.service"); err != nil {
+    		fmt.Println(err)
+    	}
+    }
+
+    func launchService(srvName string) error {
+    	_, err := exec.Command("systemctl", "start", srvName).Output()
+    	return err
+    }
+  \end{minted}
+\item 正确用法
+
+  添加参数检查：
+  \begin{minted}[breaklines]{go}
+    func launchService(srvName string) error {
+    	matched, _ := regexp.MatchString(`^[a-zA-Z][a-zA-Z0-9\-]*\.[a-z]*$`, srvName)
+    	if !matched {
+    		return fmt.Errorf("invalid service: %s", srvName)
+    	}
+    	_, err := exec.Command("systemctl", "start", srvName).Output()
+    	return err
+    }
+  \end{minted}
+\end{itemize}

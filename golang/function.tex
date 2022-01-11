@@ -1,0 +1,267 @@
+\chapter{函数}
+\section{避免参数语义不明确}
+函数调用中的意义不明确的参数可能会损害可读性。当参数名称的含义不明显时，请为参数添加 C 样式注释 (\texttt{/* ... */})
+\begin{itemize}[leftmargin=4em]
+\item 错误用法
+
+  \begin{minted}{go}
+    // func printInfo(name string, isLocal, done bool)
+
+    printInfo("foo", true, true)
+  \end{minted}
+\item 正确用法
+
+  \begin{minted}{go}
+    // func printInfo(name string, isLocal, done bool)
+
+    printInfo("foo", true /* isLocal */, true /* done */)
+  \end{minted}
+\end{itemize}
+
+对于上面的示例代码，还有一种更好的处理方式是将上面的 \texttt{bool} 类型换成自定义类型。
+将来，该参数可以支持不仅仅局限于两个状态（\texttt{true/false}）。
+\begin{minted}[xleftmargin=3.5em]{go}
+type Region int
+
+const (
+	UnknownRegion Region = iota
+	Local
+)
+
+type Status int
+
+const (
+	StatusReady Status= iota + 1
+	StatusDone
+	// Maybe we will have a StatusInProgress in the future.
+)
+
+func printInfo(name string, region Region, status Status)
+\end{minted}
+
+优先使用此种方式。
+
+\section{最小职责原则}
+函数实现时应遵循最小职责原则，尽量使函数的功能单一且简洁，避免多种功能揉合。
+\begin{itemize}[leftmargin=4em]
+\item 错误用法
+
+  \begin{minted}{go}
+    // Don't do this
+    func main() {
+    	fmt.Println(mulOfSums(1, 1))
+    }
+
+    func mulOfSums(a, b int) int {
+    	return (a + b) * (a + b)
+    }
+  \end{minted}
+\item 正确用法
+
+  \begin{minted}{go}
+    // Do this instead
+    func main() {
+    	fmt.Println(mul(add(1, 1), add(1, 1)))
+    }
+
+    func add(a, b int) int {
+    	return a + b
+    }
+
+    func mul(a, b int) int {
+    	return a * b
+    }
+  \end{minted}
+\end{itemize}
+
+\section{避免使用 init()}
+尽可能避免使用 \texttt{init()} 。当 \texttt{init()} 是不可避免或可取的，代码应先尝试：
+\begin{enumerate}[leftmargin=4em]
+\item 无论程序环境或调用如何，都要完全确定；
+\item 避免依赖于其它 \texttt{init()} 函数的顺序或副作用。虽然 \texttt{init()} 顺序是明确的，但代码可以更改， 因此 \texttt{init()} 函数之间的关系可能会使代码变得脆弱和容易出错；
+\item 避免访问或操作全局或环境状态，如机器信息、环境变量、工作目录、程序参数/输入等；
+\item 避免I/O，包括文件系统、网络和系统调用。
+\end{enumerate}
+
+不能满足这些要求的代码可能属于要作为 \texttt{main()} 调用的一部分（或程序生命周期中的其它地方）， 或者作为 \texttt{main()} 本身的一部分写入。
+特别是，打算由其它程序使用的库应该特别注意完全确定性， 而不是执行“init magic”。
+
+\begin{itemize}[leftmargin=4em]
+\item 错误用法
+
+  \begin{minted}{go}
+    type Foo struct {
+    	// ...
+    }
+    var _defaultFoo Foo
+    func init() {
+    	_defaultFoo = Foo{
+    		// ...
+    	}
+    }
+
+    type Config struct {
+    	// ...
+    }
+    var _config Config
+    func init() {
+    	// Bad: 基于当前目录
+    	cwd, _ := os.Getwd()
+    	// Bad: I/O
+    	raw, _ := ioutil.ReadFile(
+    		path.Join(cwd, "config", "config.yaml"),
+    	)
+    	yaml.Unmarshal(raw, &_config)
+    }
+  \end{minted}
+\item 正确用法
+
+  \begin{minted}{go}
+    var _defaultFoo = Foo{
+    	// ...
+    }
+    // or, 为了更好的可测试性:
+    var _defaultFoo = defaultFoo()
+    func defaultFoo() Foo {
+    	return Foo{
+    		// ...
+    	}
+    }
+    type Config struct {
+    	// ...
+    }
+    func loadConfig() Config {
+    	cwd, err := os.Getwd()
+    	// handle err
+    	raw, err := ioutil.ReadFile(
+    		path.Join(cwd, "config", "config.yaml"),
+    	)
+    	// handle err
+    	var config Config
+    	yaml.Unmarshal(raw, &config)
+    	return config
+    }
+  \end{minted}
+\end{itemize}
+
+考虑到上述情况，在某些情况下， \texttt{init()} 可能更可取或是必要的，可能包括：
+\begin{itemize}[leftmargin=4em]
+\item 不能表示为单个赋值的复杂表达式；
+\item 可插入的钩子，如 \texttt{database/sql} 、编码类型注册表等；
+\item 对 \texttt{Google Cloud Functions} 和其它形式的确定性预计算的优化。
+\end{itemize}
+
+\section{主函数退出方式(Exit)}
+Go 程序使用 \texttt{os.Exit} 或者 \texttt{log.Fatal\*} 立即退出 (使用 \texttt{panic} 不是退出程序的好方法)。
+
+仅在 \texttt{main()} 中调用其中一个 \texttt{os.Exit} 或者 \texttt{log.Fatal\*} 。
+所有其它函数应将错误通过返回值返回，并进行处理。
+\begin{itemize}[leftmargin=4em]
+\item 错误用法
+
+  \begin{minted}{go}
+    func main() {
+    	body := readFile(path)
+    	fmt.Println(body)
+    }
+    func readFile(path string) string {
+    	f, err := os.Open(path)
+    	if err != nil {
+    		log.Fatal(err)
+    	}
+    	b, err := ioutil.ReadAll(f)
+    	if err != nil {
+    		log.Fatal(err)
+    	}
+    	return string(b)
+    }
+  \end{minted}
+\item 正确用法
+
+  \begin{minted}{go}
+    func main() {
+    	body, err := readFile(path)
+    	if err != nil {
+    		log.Fatal(err)
+    	}
+    	fmt.Println(body)
+    }
+    func readFile(path string) (string, error) {
+    	f, err := os.Open(path)
+    	if err != nil {
+    		return "", err
+    	}
+    	b, err := ioutil.ReadAll(f)
+    	if err != nil {
+    		return "", err
+    	}
+    	return string(b), nil
+    }
+  \end{minted}
+\end{itemize}
+
+原则上，具有多种功能的程序退出存在一些问题：
+\begin{itemize}[leftmargin=4em]
+\item 不明显的控制流：任何函数都可以退出程序，因此很难对控制流进行推理；
+\item 难以测试：退出程序的函数也将退出调用它的测试。这使得函数很难测试，并引入了跳过 \texttt{go test} 尚未运行的其它测试的风险；
+\item 跳过清理：当函数退出程序时，会跳过已经进入 \texttt{defer} 队列里的函数调用。这增加了跳过重要清理任务的风险。
+\end{itemize}
+
+一次性退出原则，在 \texttt{main()} 函数中最多一次调用 \texttt{os.Exit} 或者 \texttt{log.Fatal} 。
+如果有多个错误场景停止程序执行，请将该逻辑放在单独的函数下并从中返回错误。
+这会缩短 \texttt{main()} 函数，并将所有关键业务逻辑放入一个单独的、可测试的函数中。
+
+\begin{itemize}[leftmargin=4em]
+\item 错误用法
+
+  \begin{minted}{go}
+    package main
+    func main() {
+    	args := os.Args[1:]
+    	if len(args) != 1 {
+    		log.Fatal("missing file")
+    	}
+    	name := args[0]
+    	f, err := os.Open(name)
+    	if err != nil {
+    		log.Fatal(err)
+    	}
+    	defer f.Close()
+    	// 如果我们调用log.Fatal 在这条线之后
+    	// f.Close 将会被执行.
+    	b, err := ioutil.ReadAll(f)
+    	if err != nil {
+    		log.Fatal(err)
+    	}
+    	// ...
+    }
+  \end{minted}
+\item 正确用法
+
+  \begin{minted}{go}
+    package main
+    func main() {
+    	if err := run(); err != nil {
+    		log.Fatal(err)
+    	}
+    }
+
+    func run() error {
+    	args := os.Args[1:]
+    	if len(args) != 1 {
+    		return errors.New("missing file")
+    	}
+    	name := args[0]
+    	f, err := os.Open(name)
+    	if err != nil {
+    		return err
+    	}
+    	defer f.Close()
+    	b, err := ioutil.ReadAll(f)
+    	if err != nil {
+    		return err
+    	}
+    	// ...
+    }
+  \end{minted}
+\end{itemize}

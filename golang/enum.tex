@@ -1,0 +1,46 @@
+\chapter{Enum}
+\textbf{枚举从 1 开始。}
+
+在 \texttt{Go} 中引入枚举的标准方法是声明一个自定义类型和一个使用了 \texttt{iota} 的 \texttt{const} 组。
+由于变量的默认值为 0，因此通常应以非零值开头枚举。
+\begin{itemize}[leftmargin=4em]
+\item 错误用法
+
+  \begin{minted}{go}
+    type Operation int
+
+    const (
+    	Add Operation = iota
+    	Subtract
+    	Multiply
+    )
+
+    // Add=0, Subtract=1, Multiply=2
+  \end{minted}
+\item 正确用法
+
+  \begin{minted}{go}
+    type Operation int
+
+    const (
+    	Add Operation = iota + 1
+    	Subtract
+    	Multiply
+    )
+
+    // Add=1, Subtract=2, Multiply=3
+  \end{minted}
+\end{itemize}
+
+在某些情况下，使用零值是有意义的（枚举从零开始），例如，当零值是理想的默认行为时。
+\begin{minted}[xleftmargin=3.5em]{go}
+type LogOutput int
+
+const (
+	LogToStdout LogOutput = iota
+	LogToFile
+	LogToRemote
+)
+
+// LogToStdout=0, LogToFile=1, LogToRemote=2
+\end{minted}
