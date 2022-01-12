@@ -1,0 +1,23 @@
+name: Release PDF
+
+on:
+  push:
+    tags:
+    - 'v*'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@master
+    - name: Pull Docker Image
+      run: docker pull myml/texlive-render:latest
+    - name: Build PDF
+      run: |
+        # run twice to generate table of contents
+        docker run -v `pwd`:/worker -u root --workdir /worker --entrypoint=lualatex myml/texlive-render --output-format pdf --shell-escape ./deepin-styleguide.tex
+        docker run -v `pwd`:/worker -u root --workdir /worker --entrypoint=lualatex myml/texlive-render --output-format pdf --shell-escape ./deepin-styleguide.tex
+    - name: Upload PDF to release artifacts
+      uses: softprops/action-gh-release@v1
+      with:
+        files: deepin-styleguide.pdf
