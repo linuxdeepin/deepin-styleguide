@@ -230,7 +230,7 @@ C++ 文件要以 \cppinline{.cpp} 结尾，头文件以 \cppinline{.h} 结尾。
     };
 \end{cppcode}
 
-2009 年 1 月之前，Google一直建议采用 \DFullRef{macro-names} 的方式命名枚举值。由于枚举值和宏之间的命名冲突，直接导致了很多问题。由此，这里改为优先选择常量风格的命名方式。新代码应该尽可能优先使用常量风格。但是老代码没必要切换到常量风格，除非宏风格确实会产生编译期问题.
+2009 年 1 月之前，Google 一直建议采用\DFullRef{macro-names}的方式命名枚举值。由于枚举值和宏之间的命名冲突，直接导致了很多问题。由此，这里改为优先选择\DFullRef{type-names}的方式。新代码应该尽可能优先使用\DFullRef{type-names}的方式。但是老代码没必要切换到\DFullRef{type-names}的方式，除非宏风格确实会产生编译期问题。
 
 \section{宏命名} \label{macro-names}
 
