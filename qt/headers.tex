@@ -23,10 +23,10 @@
 \section{#define 保护} \label{pragma-once-guard}
 
 \DBox{
-  所有头文件都应该使用 \cppinline{#define} 来防止头文件被多重包含，命名格式当是：\cppinline{<PROJECT>_<PATH>_<FILE>_H_}。
+  所有头文件都应该使用 \cppinline{#define} 来防止头文件被多重包含，对于复杂项目，推荐格式是：\cppinline{<PROJECT>_<PATH>_<FILE>_H_}。可以根据实际项目情况使用其他格式。
 }
 
-为保证唯一性，头文件的命名应该基于所在项目源代码树的全路径。例如，项目 foo 中的头文件 foo/src/bar/baz.h 可按如下方式保护：
+为保证唯一性，建议基于所在项目源代码树的全路径来产生宏名称。例如，项目 foo 中的头文件 foo/src/bar/baz.h 可按如下方式保护：
 
 \begin{cppcode}
   #ifndef FOO_BAR_BAZ_H_
