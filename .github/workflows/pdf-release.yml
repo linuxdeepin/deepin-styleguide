@@ -10,13 +10,34 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@master
-    - name: Pull Docker Image
-      run: docker pull myml/texlive-render:latest
+    - name: Install depends
+      run: sudo apt install wget plantuml inkscape python3-pygments make texlive-latex-base texlive-lang-chinese texlive-luatex texlive-latex-recommended texlive-latex-extra
+    - name: Install patch
+      run: |
+        cat << EOF > patch
+        --- /usr/share/texmf-dist/tex/lualatex/plantuml/plantuml.lua    2022-04-17 16:12:47.000000000 +0800
+        +++ /tmp/plantuml.lua   2022-10-25 11:19:18.203071671 +0800
+        @@ -21,8 +21,9 @@ function convertPlantUmlToTikz(jobname,
+             return
+           end
+
+        +  local lang = os.getenv("LANG")
+           texio.write("Executing PlantUML... ")
+        -  local cmd = "java -Djava.awt.headless=true -jar " .. plantUmlJar .. " -charset UTF-8 -t"
+        +  local cmd = "LC_CTYPE=" .. lang .. " java -Djava.awt.headless=true -jar " .. plantUmlJar .. " -charset UTF-8 -t"
+           if (mode == "latex") then
+             cmd = cmd .. "latex:nopreamble"
+           else
+        EOF
+        sudo patch --verbose /usr/share/texlive/texmf-dist/tex/lualatex/plantuml/plantuml.lua < patch
+    - name: config language
+      run: |
+        sudo locale-gen zh_CN.UTF-8 && sudo update-locale && export LANG=zh_CN.UTF-8
     - name: Build PDF
       run: |
         # run twice to generate table of contents
-        docker run -v `pwd`:/worker -u root --workdir /worker --entrypoint=lualatex myml/texlive-render --output-format pdf --shell-escape ./deepin-styleguide.tex
-        docker run -v `pwd`:/worker -u root --workdir /worker --entrypoint=lualatex myml/texlive-render --output-format pdf --shell-escape ./deepin-styleguide.tex
+        PLANTUML_JAR=/usr/share/plantuml/plantuml.jar lualatex "-shell-escape" -synctex=1 -interaction=nonstopmode -file-line-error ./deepin-styleguide.tex || true
+        PLANTUML_JAR=/usr/share/plantuml/plantuml.jar lualatex "-shell-escape" -synctex=1 -interaction=nonstopmode -file-line-error ./deepin-styleguide.tex || true
     - name: Upload PDF to release artifacts
       uses: softprops/action-gh-release@v1
       with:
