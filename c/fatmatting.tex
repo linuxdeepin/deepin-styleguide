@@ -1,0 +1,222 @@
+\chapter{格式化}
+
+在一个项目中，必须保证代码风格一致性。除非这些代码是直接复制引用第三方的，这些第三方代码建议放在单独目录。同时，务必使用\cinline{.editorconfig}来保证编辑器能够正确处理代码风格。
+
+\section{行长度}
+
+\textbf{总述}
+
+每一行代码字符数不超过 110。不同人对使用 80/100/110/120 持有不同的态度，但是这个争论毫无意义，请在 \deepin 的\cinline{C}项目中保持这个值。
+
+\begin{DNote}
+头文件保护可以无视该原则。
+\end{DNote}
+
+\section{字符编码}
+
+\textbf{总述}
+
+使用时必须使用 UTF-8 编码。除非在输出给用户直接观看的文本中，否则不要使用非 ASCII 字符；即使在输出文本，也应该慎重考虑对 tty 的支持，避免输出乱码。
+
+\section{缩进}
+
+\textbf{总述}
+
+只使用空格，每次缩进 4 个空格。
+
+\section{函数声明与定义}
+
+\textbf{总述}
+
+返回类型和函数名在同一行，参数也尽量放在同一行，如果放不下就对形参分行。需要注意如下细节：
+
+\begin{itemize}
+  \item 左大括号总在最后一个参数同一行的末尾处，不另起新行。
+  \item 右大括号总是单独位于函数最后一行，或者与左大括号同一行。
+  \item 左圆括号总是和函数名在同一行，函数名和左圆括号间永远没有空格。
+  \item 右圆括号和左大括号间总是有一个空格
+  \item 所有形参应尽可能对齐。
+  \item 换行后的参数缺省缩进为 8 个空格，即 2 倍标准缩减。
+\end{itemize}
+
+\textbf{说明}
+
+\begin{ccode}
+void some_function(int foo) {
+    int a;
+}
+
+void some_function(
+        int foo,
+        bool bar,
+        char baz) {
+    int a, b, c;
+}
+\end{ccode}
+
+\section{条件表达式}
+
+\textbf{总述}
+
+单行 if 块应该被包含在 \{\} 中。\cinline{else}块通常应该从与闭合\}相同的行开始。不在圆括号内使用空格。
+
+\textbf{说明}
+
+\begin{ccode}
+if (foobar) {
+    find_and_waldo();
+} else {
+    dont_find_waldo();
+}
+\end{ccode}
+
+\section{循环和开关选择语句}
+
+\textbf{总述}
+
+\cinline{switch}语句可以使用大括号分段，以表明 cases 之间不是连在一起的。在单语句循环里，括号可用可不用。空循环体应使用 \{\} 或 \cinline{continue}，而不是一个简单的分号。
+
+\textbf{说明}
+
+\begin{ccode}
+switch (var) {
+case 0: {     // 不缩进
+    ...       // 4 空格缩进
+    break;
+}
+case 1: {
+    ...
+    break;
+}
+default: {
+    assert(false);
+}
+}
+
+for (int i = 0; i < num; ++i) {
+  printf("I take it back\n");
+}
+
+while (condition) {
+  // 反复循环直到条件失效。
+}
+
+for (int i = 0; i < num; ++i) {}  // 可 - 空循环体。
+
+while (condition) continue;  // 可 - contunue 表明没有逻辑。
+\end{ccode}
+
+\section{指针}
+
+\textbf{总述}
+
+句点或箭头前后不要有空格。指针/地址操作符 (\*, \&) 之后不能有空格。
+
+\textbf{说明}
+
+\begin{ccode}
+x = *p;
+p = &x;
+x = r.y;
+x = r->y;
+
+// 好，空格前置。
+char *c;
+
+// 可接受，空格后置。
+char* c;
+
+int x, *y;  // 不允许 - 在多重声明中不能使用 & 或 *
+char * c;   // 差 - * 两边都有空格
+\end{ccode}
+
+\section{布尔表达式}
+
+\textbf{总述}
+
+如果一个布尔表达式超过标准行宽，断行方式要统一一下。
+
+\textbf{说明}
+
+可以考虑额外插入圆括号，合理使用的话对增强可读性是很有帮助的。
+
+\begin{ccode}
+    if (this_one_thing > this_other_thing
+        && a_third_thing == a_fourth_thing
+        && yet_another
+        && last_one) {
+    }
+\end{ccode}
+
+\section{函数返回值}
+
+\textbf{总述}
+
+不要在 \cinline{return} 表达式里加上非必须的圆括号。
+
+\textbf{说明}
+
+只有在写 \cinline{x = expr} 要加上括号的时候才在 \cinline{return expr;} 里使用括号。
+
+\begin{ccode}
+return result;  // 返回值很简单，没有圆括号。
+// 可以用圆括号把复杂表达式圈起来，改善可读性。
+return (some_long_condition &&
+        another_condition);
+
+return (value);                // 错误，毕竟您从来不会写 var = (value);
+return(result);                // 错误，return 可不是函数！
+\end{ccode}
+
+\section{预处理指令}
+
+\textbf{总述}
+
+预处理指令不要缩进，从行首开始。
+
+\textbf{说明}
+
+即使预处理指令位于缩进代码块中，指令也应从行首开始。
+
+\begin{ccode}
+    if (lopsided_score) {
+#if DISASTER_PENDING      // 正确 - 从行首开始
+        drop_everything();
+#if NOTIFY
+        notify_client();
+#endif
+#endif
+        back_to_normal();
+    }
+\end{ccode}
+
+\section{留白}
+
+\textbf{总述}
+
+水平留白的使用根据在代码中的位置决定。永远不要在行尾添加没意义的留白。添加冗余的留白会给其他人编辑时造成额外负担。因此，行尾不要留空格。如果确定一行代码已经修改完毕，将多余的空格去掉; 或者在专门清理空格时去掉（尤其是在没有其他人在处理这件事的时候)。
+
+垂直留白越少越好。这不仅仅是规则而是原则问题了：不在万不得已，不要使用空行。尤其是：两个函数定义之间的空行不要超过 2 行，函数体首尾不要留空行，函数体中也不要随意添加空行。基本原则是：同一屏可以显示的代码越多，越容易理解程序的控制流。当然，过于密集的代码块和过于疏松的代码块同样难看，这取决于你的判断。但通常是垂直留白越少越好。
+
+\textbf{说明}
+
+即使预处理指令位于缩进代码块中，指令也应从行首开始。
+
+\begin{ccode}
+void f(bool b) {  // 左大括号前总是有空格
+int i = 0;  // 分号前不加空格
+
+// 对于单行函数的实现，在大括号内加上空格
+// 然后是函数实现
+Foo(int b) : Bar(), baz_(b) {}  // 大括号里面是空的话，不加空格
+void Reset() { baz_ = 0; }      // 用空格把大括号与实现分开
+
+if (b) {            // if 条件语句和循环语句关键字后均有空格。
+} else {            // else 前后有空格。
+}
+while (test) {}     // 圆括号内部不紧邻空格。
+
+switch (i) {
+case 1:             // switch case 的冒号前无空格。
+case 2: break;      // 如果冒号有代码，加个空格。
+\end{ccode}

@@ -5,96 +5,29 @@
 
 \usepackage[margin=1in]{geometry}
 
-\usepackage{xcolor}
-\definecolor{deepin_blue}{HTML}{0088FD}
-\definecolor{deepin_black}{HTML}{000000}
-\definecolor{deepin_orange}{RGB}{244, 151, 0}
-
-\usepackage{minted}
-
-\newminted{cpp}{frame=lines,framerule=1pt,breaklines,breakanywhere}
-\newmintinline{cpp}{breaklines,breakanywhere}
-
-\newminted{ini}{frame=lines,framerule=1pt,breaklines,breakanywhere}
-\newmintinline{ini}{breaklines,breakanywhere}
-
-\usepackage{nameref}
-\usepackage[colorlinks=true]{hyperref}
-
-\newcommand*{\DFullRef}[1]{\hyperref[{#1}]{\ref*{#1} \nameref*{#1}}}
-
-\usepackage{titlesec}
-\titleformat{\chapter}[hang]
-{\huge\bfseries}
-{\thechapter\hspace{20pt}\textcolor{deepin_black}{|}\hspace{20pt}}{0pt}
-{\huge\bfseries}
-
-\usepackage{enumitem}
-
-\makeatletter
-\renewcommand{\section}{
-  \@startsection{section}{1}{0mm}
-  {0.5\baselineskip}{0.5\baselineskip}{\bf\leftline}
- }
-\makeatother
-
-\makeatletter
-\newcommand*{\DBox}[1]{
-\@makeother\#
-\vspace{0.5\baselineskip}
-\noindent\fbox{\parbox{\linewidth}{#1}}
-}
-\makeatother
-
-\makeatletter
-\newcommand*{\GWarn}[1]{
-\@makeother\#
-\noindent\fbox{\parbox{\linewidth}{#1}}
-}
-\makeatother
-
-\usepackage{framed}
-\usepackage{quoting}
-
-\newenvironment{DNote}
-{
-    \color{deepin_blue}
-    \bfseries
-    \quoting[leftmargin=0pt, vskip=0pt,noorphans]
-}
-{
-    \endquoting
-}
-
-\newenvironment{DWarn}
-{
-    \color{deepin_orange}
-    \bfseries
-    \quoting[leftmargin=0pt, vskip=0pt,noorphans]
-}
-{
-    \endquoting
-}
-
-\usepackage{verbatim}
+\input{utils.tex}
 
 % 设置段落间距
 \setlength{\parskip}{0.5em}
 \makeatletter
 \@addtoreset{chapter}{part}
 \makeatother
-\title{deepin 开源项目风格指南}
 
+\title{\deepin 开源项目风格指南}
 \date{\today}
+\author{\deepin}
 
 \begin{document}
+
 \maketitle
 
 \textbf{声明}
 
-本项目是在\href{https://github.com/zh-google-styleguide/zh-google-styleguide}{Google 开源项目风格指南——中文版}基础上修改而来。
+本项目是在《\href{https://github.com/zh-google-styleguide/zh-google-styleguide}{Google 开源项目风格指南——中文版}》基础上修改而来。
 
 本项目使用 \LaTeX 构建。
+
+\begin{DNote}
 
 \textbf{Google 开源项目风格指南——中文版声明}
 
@@ -112,10 +45,13 @@
 
 英文版项目还包含 \href{https://github.com/google/styleguide/tree/gh-pages/cpplint}{cpplint} ——一个用来帮助适应风格准则的工具，以及 \href{https://raw.githubusercontent.com/google/styleguide/gh-pages/google-c-style.el}{google-c-style.el}，Google 风格的 Emacs 配置文件。
 
+\end{DNote}
+
 \tableofcontents
 \newpage
 
 \input{deepin/index.tex}
+\input{c/index.tex}
 \input{qt/index.tex}
 \input{golang/index.tex}
 
