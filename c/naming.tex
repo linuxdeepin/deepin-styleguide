@@ -1,0 +1,191 @@
+\chapter{命名约定}
+
+\section{通用命名规则} \label{c-general-naming-rules}
+
+\textbf{总述}
+
+函数命名，变量命名，文件命名要有描述性，少用缩写。
+
+\textbf{说明}
+
+尽可能使用描述性的命名，别心疼空间，毕竟相比之下让代码易于新读者理解更重要。不要用只有项目开发者能理解的缩写，也不要通过砍掉几个字母来缩写单词。
+
+可接受的命名方式：
+
+\begin{ccode}
+int price_count_reader;     // 无缩写
+int num_errors;             // "num" 是一个常见的写法
+int num_dns_connections;    // 人人都知道 "DNS" 是什么
+\end{ccode}
+
+不好的命名方式：
+
+\begin{ccode}
+int n;                    // 毫无意义
+int n_err;                // 含糊不清的缩写
+int pc_reader;            // 只有贵团队知道是什么意思
+int cstmr_id;             // 删减了若干字母
+int l, I, O, l0, Il;      // 易与数字混淆名称
+int YE5, N0;              // 易与单词混淆名称
+int fxxk;                 // 不良名称
+\end{ccode}
+
+同时需要注意编译器限制，如果两个名称有相同的前缀，当相同前缀超过一定长度时是危险的，可能会导致编译器无法有效区分相关名称。C 标准指明，保证名称前 31 位不同可避免这种问题。
+
+\begin{ccode}
+extern int identifier_of_a_very_very_long_name_1;  // 过长字符，部分编译器无法区分
+extern int identifier_of_a_very_very_long_name_2;
+\end{ccode}
+
+避免有特殊意义的名称，包括：
+
+\begin{itemize}
+  \item 标准库或编译环境中的宏名称
+  \item 标准库中具有外部链接性的对象或函数名称
+  \item 标准库中的类型名称
+\end{itemize}
+
+\begin{ccode}
+int errno;  //变量 errno 与标准库中的 errno 名称相同，不便于区分是自定义的还是系统定义的
+\end{ccode}
+
+\section{文件命名}
+
+\textbf{总述}
+
+文件名要全部小写，可以包含下划线（\cinline{_}） 。如果存在无法使用（\cinline{_}）的情况，可以考虑使用连字符（\cinline{-}），否则不允许例外。
+
+\textbf{说明}
+
+可接受的文件命名：
+
+\begin{ccode}
+my_useful_class.c
+my_useful_class_test.c
+\end{ccode}
+
+不接受的文件命名：
+
+\begin{ccode}
+my-useful-class.c  // 不接受，除非无法使用_
+myusefulclass.c    // 不接受，难以看懂
+\end{ccode}
+
+不要使用标准库中的文件名，例如\cinline{stdio.h}。通常应尽量让文件名更加明确。\cinline{http_server_logs.h} 就比 \cinline{logs.h} 要好。
+
+\section{类型命名} \label{c-type-names}
+
+\textbf{总述}
+
+类型名称的每个单词首字母均大写，不包含下划线：\cinline{MyExcitingStruct}。
+
+\textbf{说明}
+
+结构体，类型定义 (\cinline{typedef})，以大写字母开始，每个单词首字母均大写，不包含下划线。例如：
+
+\begin{ccode}
+typedef struct SessionStatusInfo {
+    const char *id;
+    const char *remote_host;
+} SessionStatusInfo;
+
+typedef union UnitDependencyInfo {
+    void *data;
+    struct {
+        UnitDependencyMask origin_mask:16;
+        UnitDependencyMask destination_mask:16;
+    } _packed_;
+} UnitDependencyInfo;
+\end{ccode}
+
+\section{变量命名} \label{c-variable-names}
+
+\textbf{总述}
+
+变量命名一律使用蛇形命名法（snake\_case）。
+
+\textbf{说明}
+
+\begin{ccode}
+char *table_name;
+char *tableName;   // 不接受 - 用下划线。
+char *tablename;   // 不接受，无分割符合。
+\end{ccode}
+
+\section{函数命名} \label{c-function-names}
+
+\textbf{总述}
+
+函数命名一律使用蛇形命名法（snake\_case）。
+
+\textbf{说明}
+
+\begin{ccode}
+  int is_system_up();  // 一个名为 is_system_up 的功能性函数
+\end{ccode}
+
+\section{宏命名} \label{c-macro-names}
+
+\textbf{总述}
+
+尽可能少的使用宏，如果必须使用，则用全大写，并使用下划线分隔。\cinline{MY_MACRO_THAT_SCARES_SMALL_CHILDREN}.
+
+\textbf{说明}
+
+\begin{ccode}
+#define ROUND(x) ...
+#define PI_ROUNDED 3.0
+\end{ccode}
+
+\section{枚举命名} \label{c-enum-names}
+
+\textbf{总述}
+枚举本身命名参考宏命名。
+
+\textbf{说明}
+
+对于标志类型（Flags）如果可能的话，使用枚举。通过 \cinline{1 <<} 表达式指示位值，并垂直对齐它们。为其定义枚举和类型。
+
+\begin{ccode}
+typedef enum FoobarFlags {
+    FOOBAR_QUUX  = 1 << 0,
+    FOOBAR_WALDO = 1 << 1,
+    FOOBAR_XOXO  = 1 << 2,
+} FoobarFlags;
+\end{ccode}
+
+对于非标志类型，定义一个 \cinline{_MAX} 枚举，用于表示已定义枚举值中最大的值，再加一。由于这不是常规枚举值，请使用 \cinline{_} 作为前缀。同时，定义一个特殊的“无效”枚举值，并将其设置为 \cinline{-EINVAL}。这样枚举类型可以安全地用于传播转换错误。
+
+\begin{ccode}
+typedef enum FoobarMode {
+    FOOBAR_AAA,
+    FOOBAR_BBB,
+    FOOBAR_CCC,
+    _FOOBAR_MAX,
+    _FOOBAR_INVALID = -EINVAL,
+} FoobarMode;
+\end{ccode}
+
+\section{完整实例}
+
+\begin{ccode}
+#include <gtk/gtk.h>
+
+static void on_activate (GtkApplication *app) {
+    // Create a new window
+    GtkWidget *t_window = gtk_application_window_new (g_app);
+    // Create a new button
+    GtkWidget *t_button = gtk_button_new_with_label ("Hello, World!");
+    // When the button is clicked, close the window passed as an argument
+    g_signal_connect_swapped (g_button, "clicked", G_CALLBACK (gtk_window_close), window);
+    gtk_window_set_child (GTK_WINDOW (t_window), g_button);
+    gtk_window_present (GTK_WINDOW (t_window));
+}
+
+int main (int argc, char *argv[]) {
+    // Create a new application
+    GtkApplication *t_app = gtk_application_new ("com.example.GtkApplication", G_APPLICATION_FLAGS_NONE);
+    g_signal_connect (t_app, "activate", G_CALLBACK (on_activate), NULL);
+    return g_application_run (G_APPLICATION (t_app), argc, argv);
+}
+\end{ccode}

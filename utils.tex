@@ -1,0 +1,108 @@
+\usepackage{xcolor}
+\definecolor{deepin_blue}{HTML}{0088FD}
+\definecolor{deepin_black}{HTML}{000000}
+\definecolor{deepin_gray}{HTML}{F0F0F0}
+\definecolor{deepin_orange}{RGB}{244, 151, 0}
+
+\usepackage{ifxetex,ifluatex}
+
+% 使用 getenv 获取输出目录，避免 minted 插件在使用分离目录编译时找不到文件
+\ifxetex
+  \usepackage{catchfile}
+  \newcommand\getenv[2][]{%
+    \immediate\write18{kpsewhich --var-value #2 > \jobname.tmp}%
+    \CatchFileDef{\temp}{\jobname.tmp}{\endlinechar=-1}%
+    \if\relax\detokenize{#1}\relax\temp\else\let#1\temp\fi}
+\else
+  \ifluatex
+    \newcommand\getenv[2][]{%
+      \edef\temp{\directlua{tex.sprint(
+        kpse.var_value("\luatexluaescapestring{#2}") or "" ) }}%
+      \if\relax\detokenize{#1}\relax\temp\else\let#1\temp\fi}
+  \else
+    \usepackage{catchfile}
+    \newcommand{\getenv}[2][]{%
+      \CatchFileEdef{\temp}{"|kpsewhich --var-value #2"}{\endlinechar=-1}%
+      \if\relax\detokenize{#1}\relax\temp\else\let#1\temp\fi}
+  \fi
+\fi
+
+\getenv[\TEXMFOUTPUT]{TEXMFOUTPUT}
+% 配置代码高亮
+\ifx\TEXMFOUTPUT\empty
+  \usepackage{minted}
+\else
+  \usepackage[outputdir=\TEXMFOUTPUT,cache=false]{minted}
+\fi
+
+\newminted{cpp}{frame=lines,framerule=1pt,breaklines,breakanywhere}
+\newmintinline{cpp}{breaklines,breakanywhere}
+
+\newminted{c}{frame=lines,framerule=1pt,breaklines,breakanywhere}
+\newmintinline{c}{breaklines,breakanywhere}
+
+\newminted{ini}{frame=lines,framerule=1pt,breaklines,breakanywhere}
+\newmintinline{ini}{breaklines,breakanywhere}
+
+\usepackage{nameref}
+\usepackage[colorlinks=true]{hyperref}
+
+\newcommand*{\DFullRef}[1]{\hyperref[{#1}]{\ref*{#1} \nameref*{#1}}}
+
+\usepackage{titlesec}
+\titleformat{\chapter}[hang]
+{\huge\bfseries}
+{\thechapter\hspace{20pt}\textcolor{deepin_black}{|}\hspace{20pt}}{0pt}
+{\huge\bfseries}
+
+\usepackage{enumitem}
+
+\makeatletter
+\renewcommand{\section}{
+  \@startsection{section}{1}{0mm}
+  {0.5\baselineskip}{0.5\baselineskip}{\bf\leftline}
+ }
+\makeatother
+
+\makeatletter
+\newcommand*{\DBox}[1]{
+\@makeother\#
+\vspace{0.5\baselineskip}
+\noindent\fbox{\parbox{\linewidth}{#1}}
+}
+\makeatother
+
+\makeatletter
+\newcommand*{\GWarn}[1]{
+\@makeother\#
+\noindent\fbox{\parbox{\linewidth}{#1}}
+}
+\makeatother
+
+\usepackage{framed}
+
+\newenvironment{DNote}{%
+  \def\FrameCommand{%
+    {\color{deepin_blue}\vrule width 2pt}%
+    \colorbox{deepin_gray}%
+  }%
+  \MakeFramed{\advance\hsize-\width\FrameRestore}%
+}
+{%
+  \vspace{2pt}\endMakeFramed%
+}
+
+\newenvironment{DWarn}{%
+  \def\FrameCommand{%
+    {\color{deepin_orange}\vrule width 2pt}%
+    \colorbox{deepin_gray}%
+  }%
+  \MakeFramed{\advance\hsize-\width\FrameRestore}%
+}
+{%
+  \vspace{2pt}\endMakeFramed%
+}
+
+\usepackage{verbatim}
+
+\newcommand*{\deepin}[0]{\textcolor{deepin_blue}{deepin}}

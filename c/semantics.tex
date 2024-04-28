@@ -1,0 +1,86 @@
+\begin{DNote}
+    本部分内容参考\href{https://raw.githubusercontent.com/systemd/systemd/main/docs/CODING_STYLE.md}{Systemd 代码风格} 和 \href{https://github.com/zh-google-styleguide/zh-google-styleguide}{Google 开源项目风格指南——中文版}》。
+\end{DNote}
+
+\chapter{语义}
+
+对外部接口，使用 ISO C89（ANSI X3.159-1989）标准，避免外部使用者必须使用 ISO C11（ISO/IEC 9899:2011）。
+
+对于内部库，可以 GNU 扩展的 ISO C11（也称为 "gnu11"）或 ISO C11 标准。
+
+编译器建议最低支持到 GCC 8.3.0。
+
+\section{头文件}
+
+\subsection{头文件必须包含守卫}
+
+\textbf{总述}
+
+以 .h 或 为扩展名的头文件应包含头文件守卫。例中 foo.h 是“Library”模块中的头文件，宏 \cinline{LIBRARY_FOO_H} 即可作为它的守卫，保证头文件被重复引入也不会出现问题，守卫名称不可有重复，建议守卫名称遵循“模块名\_文件名”的形式。
+
+\cinline{#pragma once} 指令也可作为头文件守卫，但并不是 C/C++ 的标准方式，只是多数编译器均有支持。这种方式由编译器维护一个列表，引入头文件时，如果发现文件中有 \cinline{#pragma once}  指令就将文件路径加入列表，当这个文件再次被 include 时便不会加载，而宏守卫的方式仍然要对文件进行预编译，所以 \cinline{#pragma once}  方式在编译效率上会更高一些。
+
+\begin{DWarn}
+注意在\deepin \ Qt 风格中，不允许使用\cinline{#pragma once} 。同时为兼容性考虑，在公开的头文件中，建议也不要使用\cinline{#pragma once} 。
+\end{DWarn}
+
+\textbf{说明}
+
+\begin{ccode}
+// Header file foo.h
+#ifndef LIBRARY_FOO_H
+#define LIBRARY_FOO_H
+....
+#endif
+
+// Header file foo.h
+#pragma once
+\end{ccode}
+
+\subsection{头文件不能有静态声明}
+
+\textbf{总述}
+
+头文件中由 static 关键字声明的对象、数组或函数，会在每个包含该头文件的翻译单元或模块中生成副本造成数据冗余，如果将静态数据误用作全局数据也会造成逻辑错误。
+
+\textbf{说明}
+
+\begin{ccode}
+// In a header file
+static int i = 0;   // 不合规，头文件中错误使用
+
+static int foo() {  // 不合规，头文件中错误使用
+    return i;
+}
+\end{ccode}
+
+\subsection{头文件不能有函数实现}
+
+\textbf{总述}
+
+头文件是项目文档的重要组成部分，有必要保持头文件简洁清晰，头文件的主要内容应是类型或接口的声明。除非函数很简短，否则也不建议在头文件中内联实现，大段的函数实现会影响头文件的可读性。
+
+定义在头文件中的函数发生变化时，所有相关模块均需重新编译，会增加构建和维护成本，在使用动态链接库时这个问题尤为突出，如果库的导入者没有及时编译，可能会造成严重后果。在头文件中定义的函数是模块二进制接口的一部分，应合理规划以降低维护成本。
+
+\subsection{头文件合理声明}
+
+\textbf{总述}
+
+如果声明的位置不合理会降低代码的可维护性，甚至会导致标准未定义的行为。应遵循如下原则：
+
+\begin{itemize}
+    \item 外部链接的对象或函数应在头文件中声明，并避免重复声明
+    \item 内部链接的对象或函数应在源文件中声明，不应在头文件中声明
+    \item 避免在头文件外手工书写外部声明
+    \item 避免在局部作用域内声明函数或全局对象
+\end{itemize}
+
+\begin{ccode}
+
+int fun()
+{
+    extern int g;       // 不合规
+    extern int foo();   // 不合规
+    static int bar();   // 不合规，未定义行为
+}
+\end{ccode}
