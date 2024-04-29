@@ -27,7 +27,7 @@ Windows 程序员有自己的编程习惯, 主要源于 Windows 头文件和其�
   \item  不要使用匈牙利命名法 (比如把整型变量命名成 \cppinline{iNum})。 使用 Google 命名约定, 包括对源文件使用 \cppinline{.cc} 扩展名。
   \item Windows 定义了很多原生类型的同义词 (YuleFox 注: 这一点, 我也很反感), 如 \cppinline{DWORD}, \cppinline{HANDLE} 等等。 在调用 Windows API 时这是完全可以接受甚至鼓励的。 即使如此, 还是尽量使用原有的 C++ 类型, 例如使用 \cppinline{const TCHAR *} 而不是 \cppinline{LPCTSTR}。
   \item 使用 Microsoft Visual C++ 进行编译时, 将警告级别设置为 3 或更高, 并将所有警告(warnings)当作错误(errors)处理。
-  \item 不要使用 \cppinline{#pragma once}; 而应该使用 Google 的头文件保护规则。 头文件保护的路径应该相对于项目根目录 (Yang.Y 注: 如 \cppinline{#ifndef SRC_DIR_BAR_H_}, 参考 \DFullRef{define-guard} 一节)。
+  \item 不要使用 \cppinline{#pragma once}; 而应该使用 Google 的头文件保护规则。 头文件保护的路径应该相对于项目根目录 (Yang.Y 注: 如 \cppinline{#ifndef SRC_DIR_BAR_H_}, 参考 \DFullRef{qt-pragma-once-guard} 一节)。
   \item 除非万不得已, 不要使用任何非标准的扩展, 如 \cppinline{#pragma} 和 \cppinline{__declspec}。 使用 \cppinline{__declspec(dllimport)} 和 \cppinline{__declspec(dllexport)} 是允许的, 但必须通过宏来使用, 比如 \cppinline{DLLIMPORT} 和 \cppinline{DLLEXPORT}, 这样其他人在分享使用这些代码时可以很容易地禁用这些扩展。
 \end{itemize}
 

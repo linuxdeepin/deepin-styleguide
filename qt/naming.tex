@@ -197,7 +197,7 @@ C++ 文件要以 \cppinline{.cpp} 结尾，头文件以 \cppinline{.h} 结尾。
 
 取值和设值函数的命名与变量一致。一般来说它们的名称与实际的成员变量对应，但并不强制要求。例如 \cppinline{int getCount()} 与 \cppinline{void setCount(int count)}。
 
-\section{命名空间命名}
+\section{命名空间命名} \label{qt-namespace-names}
 
 \textbf{总述}
 \begin{DWarn}
@@ -236,13 +236,13 @@ C++ 文件要以 \cppinline{.cpp} 结尾，头文件以 \cppinline{.h} 结尾。
 
 \textbf{总述}
 
-你并不打算 \DFullRef{preprocessor-macros}，对吧？如果你一定要用，像这样命名：
+你并不打算 \DFullRef{qt-preprocessor-macros}，对吧？如果你一定要用，像这样命名：
 
 \cppinline{MY_MACRO_THAT_SCARES_SMALL_CHILDREN}.
 
 \textbf{说明}
 
-参考 \DFullRef{preprocessor-macros}; 通常 *不应该* 使用宏。如果不得不用，其命名像枚举命名一样全部大写，使用下划线：
+参考 \DFullRef{qt-preprocessor-macros}; 通常\textbf{不应该}使用宏。如果不得不用，其命名像枚举命名一样全部大写，使用下划线：
 
 \begin{cppcode}
   #define ROUND(x) ...

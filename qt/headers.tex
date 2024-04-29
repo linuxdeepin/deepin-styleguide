@@ -12,7 +12,7 @@
 	头文件应该能够自给自足（self-contained，也就是可以作为第一个头文件被引入），以 \cppinline{.h} 结尾。至于用来插入文本的文件，说到底它们并不是头文件，所以应以 \cppinline{.inc} 结尾。不允许分离出 \cppinline{-inl.h} 头文件的做法。
 }
 
-所有头文件要能够自给自足。换言之，用户和重构工具不需要为特别场合而包含额外的头文件。详言之，一个头文件要有\DFullRef{pragma-once-guard}，统统包含它所需要的其它头文件，也不要求定义任何特别 symbols。
+所有头文件要能够自给自足。换言之，用户和重构工具不需要为特别场合而包含额外的头文件。详言之，一个头文件要有\DFullRef{qt-pragma-once-guard}，统统包含它所需要的其它头文件，也不要求定义任何特别 symbols。
 
 不过有一个例外，即一个文件并不是 self-contained 的，而是作为文本插入到代码某处。或者，文件内容实际上是其它头文件的特定平台（platform-specific）扩展部分。这些文件就要用\cppinline{.inc} 文件扩展名。
 
@@ -20,7 +20,7 @@
 
 有个例外：如果某函数模板为所有相关模板参数显式实例化，或本身就是某类的一个私有成员，那么它就只能定义在实例化该模板的 \cppinline{.cpp} 文件里。
 
-\section{#define 保护} \label{pragma-once-guard}
+\section{头文件多重包含保护} \label{qt-pragma-once-guard}
 
 \DBox{
   所有头文件都应该使用 \cppinline{#define} 来防止头文件被多重包含，对于复杂项目，推荐格式是：\cppinline{<PROJECT>_<PATH>_<FILE>_H_}。可以根据实际项目情况使用其他格式。
