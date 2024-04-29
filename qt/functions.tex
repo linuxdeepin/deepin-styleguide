@@ -90,8 +90,8 @@ C/C++ 中的函数参数或者是函数的输入, 或者是函数的输出, 或�
 如果函数单靠不同的参数类型而重载 (acgtyrant 注：这意味着参数数量不变), 读者就得十分熟悉 C++ 五花八门的匹配规则, 以了解匹配过程具体到底如何。 另外, 如果派生类只重载了某个函数的部分变体, 继承语义就容易令人困惑。
 
 \textbf{结论}
-
-如果打算重载一个函数, 可以试试改在函数名里加上参数信息。 例如, 用 \cppinline{AppendString()} 和 \cppinline{AppendInt()} 等, 而不是一口气重载多个 \cppinline{Append()}。 如果重载函数的目的是为了支持不同数量的同一类型参数, 则优先考虑使用 \cppinline{std::vector} 以便使用者可以用 \DFullRef{braced-initializer-list} 指定参数。
+% TODO: change \textbf{列表初始化格式} ->  \DFullRef{braced-initializer-list} in formatting.tex not work now.
+如果打算重载一个函数, 可以试试改在函数名里加上参数信息。 例如, 用 \cppinline{AppendString()} 和 \cppinline{AppendInt()} 等, 而不是一口气重载多个 \cppinline{Append()}。 如果重载函数的目的是为了支持不同数量的同一类型参数, 则优先考虑使用 \cppinline{std::vector} 以便使用者可以用\textbf{列表初始化格式}指定参数。
 
 \section{缺省参数}
 
@@ -142,8 +142,8 @@ auto foo(int x) -> int;
 后置返回类型为函数作用域。 对于像 \cppinline{int} 这样简单的类型, 两种写法没有区别。 但对于复杂的情况, 例如类域中的类型声明或者以函数参数的形式书写的类型, 写法的不同会造成区别。
 
 \textbf{优点}
-
-后置返回类型是显式地指定 \DFullRef{lambda-expressions} 的返回值的唯一方式。 某些情况下, 编译器可以自动推导出 Lambda 表达式的返回类型, 但并不是在所有的情况下都能实现。 即使编译器能够自动推导, 显式地指定返回类型也能让读者更明了。
+% TODO: change \textbf{Lambda 表达式} -> \DFullRef{lambda-expressions} in formatting.tex not work now.
+后置返回类型是显式地指定\textbf{Lambda 表达式}的返回值的唯一方式。 某些情况下, 编译器可以自动推导出 Lambda 表达式的返回类型, 但并不是在所有的情况下都能实现。 即使编译器能够自动推导, 显式地指定返回类型也能让读者更明了。
 
 有时在已经出现了的函数参数列表之后指定返回类型, 能够让书写更简单, 也更易读, 尤其是在返回类型依赖于模板参数时。 例如:
 
@@ -165,4 +165,4 @@ auto foo(int x) -> int;
 
 \textbf{结论}
 
-在大部分情况下, 应当继续使用以往的函数声明写法, 即将返回类型置于函数名前。 只有在必需的时候 (如 Lambda 表达式) 或者使用后置语法能够简化书写并且提高易读性的时候才使用新的返回类型后置语法。 但是后一种情况一般来说是很少见的, 大部分时候都出现在相当复杂的模板代码中, 而多数情况下不鼓励写这样 \DFullRef{template-metaprogramming}。
+在大部分情况下, 应当继续使用以往的函数声明写法, 即将返回类型置于函数名前。 只有在必需的时候 (如 Lambda 表达式) 或者使用后置语法能够简化书写并且提高易读性的时候才使用新的返回类型后置语法。 但是后一种情况一般来说是很少见的, 大部分时候都出现在相当复杂的模板代码中, 而多数情况下不鼓励写这样 \DFullRef{qt-template-metaprogramming}。
