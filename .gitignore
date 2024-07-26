@@ -1,0 +1,7 @@
+*.aux
+*.log
+*.out
+*.gz
+*.toc
+/_minted-deepin-styleguide
+*.pdf
