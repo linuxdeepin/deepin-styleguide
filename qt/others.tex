@@ -49,3 +49,108 @@
   \item 在使用模板编程或者其他复杂的模板技巧的时候，你一定要再三考虑一下。考虑一下你们团队成员的平均水平是否能够读懂并且能够维护你写的模板代码。或者一个非 c++ 程序员和一些只是在出错的时候偶尔看一下代码的人能够读懂这些错误信息或者能够跟踪函数的调用流程。如果你使用递归的模板实例化，或者类型列表，或者元函数，又或者表达式模板，或者依赖 SFINAE, 或者 sizeof 的 trick 手段来检查函数是否重载，那么这说明你模板用的太多了，这些模板太复杂了，我们不推荐使用。
   \item 如果你使用模板编程，你必须考虑尽可能的把复杂度最小化，并且尽量不要让模板对外暴露。你最好只在实现里面使用模板，然后给用户暴露的接口里面并不使用模板，这样能提高你的接口的可读性。并且你应该在这些使用模板的代码上写尽可能详细的注释。你的注释里面应该详细的包含这些代码是怎么用的，这些模板生成出来的代码大概是什么样子的。还需要额外注意在用户错误使用你的模板代码的时候需要输出更人性化的出错信息。因为这些出错信息也是你的接口的一部分，所以你的代码必须调整到这些错误信息在用户看起来应该是非常容易理解，并且用户很容易知道如何修改这些错误。
 \end{itemize}
+
+\section{并发} \label{concurrency}
+
+\subsection{假定你的代码将作为多线程程序的一部分而运行}
+
+\textbf{说明}
+很难说现在或者未来什么时候会不会需要使用并发。 代码是会被重用的。 程序的其他使用了线程的部分可能会使用某个未使用线程的程序库。
+
+\textbf{结论}
+
+\begin{itemize}
+  \item 明确你代码运行的线程。
+  \item 确实有意不在多线程环境中执行的代码，应当清晰地进行标注，而且理想情况下应当利用编译或运行时的强制机制来提早检测到这种使用情况，例如，编码时候可以使用断言来判断，如使用 Q\_ASSERT(qApp->thread() == QThread::currentThread())`来断言某个代码片段一定在主线程运行；
+\end{itemize}
+
+
+\subsection{避免数据竞争代码的产生}
+
+\textbf{说明}
+
+示例，不好
+
+\begin{ccode} 
+int foo() {
+    static int id = 0;
+    return id++;        // Data races in multithreading
+}
+\end{ccode}
+
+这个函数意在每次被调用都可以返回不同的整数，但如果多个线程同时执行 id++，会使读取、计算、写入等步骤交织在一起，得到错误的结果，这是一种典型的数据竞争。
+
+\textbf{结论}
+
+\begin{itemize}
+  \item 是否使用了局部静态变量、全局数据，应更多地使用栈上的具体类型（且不要过多地把指针到处传递），且更多地使用不可变数据（字面量，constexpr，以及 const），避免数据竞争。
+  \item 线程之间传递少量的数据应该按值传递，而不是通过引用或指针传递。数据的拷贝天然会带来唯一所有权（简化代码），并消除数据竞争的可能性。
+  \item 对于数据竞争问题的核心就是要避免数据竞争代码的产生。使用“生产者-消费者”模型（比如Qt的事件循环机制）能解决大多数多线程业务的问题，这样就能避免自己去写同步和互斥的代码。
+\end{itemize}
+
+\subsection{使用合理的同步机制来控制访问共享数据的先后顺序}
+
+\textbf{说明}
+避免源于未释放的锁定的错误。
+示例，不好
+
+\begin{ccode}
+#include <QMutex>
+
+QMutex mtx;
+
+void do_stuff() {
+    mtx.lock();
+    // ... 做一些事 ...
+    mtx.unlock();
+}
+\end{ccode}
+
+或早或晚都会有人忘记 \verb|mtx.unlock()|，在 \verb|... 做一些事 ...| 中放入一个 \verb|return|，抛出异常，或者别的什么。
+
+\begin{ccode}
+#include <QMutex>
+#include <QMutexLocker>
+
+QMutex mtx;
+
+void do_stuff() {
+    QMutexLocker locker(&mtx);
+    // ... 做一些事 ...
+}
+\end{ccode}
+
+\textbf{结论}
+
+\begin{itemize}
+  \item 是否使用了锁，如果使用了锁则应该使用 RAII 来管理锁（如 QMutexLocker），绝不使用普通的 lock()/unlock()。
+  \item 是否使用了锁，如果使用了锁则绝不在持有锁的时候调用未知的代码（比如回调、比如发送一个Qt的信号），这可能造成死锁。
+\end{itemize}
+  
+\section{智能指针} \label{qt-smart-pointer}
+
+\begin{DNote}
+用\verb|QPointer|  \verb|QScopedPointer| 或 \verb|QSharedPointer| 表示所有权
+\end{DNote}
+
+\textbf{总述}
+在 Qt C++ 编程中，指针的跨作用域使用或构建长生命周期时，可能会导致内存泄漏或悬挂指针等问题。为了确保代码的安全性和可靠性，建议使用智能指针来管理动态分配的内存。
+
+示例：
+\begin{ccode} 
+     QPointer < QLabel > label =  new  QLabel ; 
+     label - > setText( "\&Status:" ); 
+     ... 
+     if (label) 
+         label - > show();
+\end{ccode}
+     如果在...部分你将该对象delete掉了，label会自动置NULL，而不会是一个悬挂(dangling)的野指针。
+
+\textbf{结论}
+\begin{itemize}
+  \item  用QScopedPointer  或 QSharedPointer 表示所有权。
+  \item  优先采用 QScopedPointer 而不是 QSharedPointer，除非需要共享所有权。概念上要更简单且更可预测（知道它何时会销毁），而且更快（不需要暗中维护引用计数）。
+  \item  以智能指针为参数，仅用于明确表达生存期语义使用智能指针作为函数参数。
+  \item  不要把来自某个智能指针别名的指针或引用传递出去。
+\end{itemize}
+
