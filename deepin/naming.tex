@@ -94,17 +94,34 @@ DDE 是 \iniinline{Deepin Desktop Environment} 的缩写。
 
 \textbf{总述}
 
-\deepin 项目应该使用全小写的命名方式，单词使用\cppinline{-}进行连接。但是如果是应用型的项目，也可以使用倒置域名进行命名。
+\deepin 项目应该使用全小写的命名方式，单词使用\texttt{`-`}进行连接(\texttt{`-`}不应该超过2个)。项目的前缀应该遵循下述规则：
+
+\begin{itemize}
+  \item 开源项目应以\texttt{deepin-}作为名称前缀，其中\texttt{DDE}组件应以\texttt{dde-}作为名称前缀。
+  \item 闭源项目应以\texttt{uos-}作为名称前缀。
+\end{itemize}
+
+但是如果是应用型的项目，也可以使用倒置域名进行命名。
 
 \textbf{使用}
 
 \begin{cppcode}
-  org.deepin.lianliankan // 倒置域名格式，应用必须使用该方式命名
-  plymouth-theme-deepin  // 正确
-  deepin-font-manager    // 正确
+  org.deepin.lianliankan	// 倒置域名格式，应用必须使用该方式命名
 
-  Robot-Autotest         // 错误，不使用大写
+  plymouth-theme-deepin	// 正确
+  deepin-font-manager	// 正确
+
+  uos-security-ac-manager	// 错误，'-' 过多
+  usec-ac-manager		// 正确，usec是安全体系的命名前缀
+
+  device_inspurcloud	// 错误，不能使用 '_'
+
+  Robot-Autotest	// 错误，不使用大写
 \end{cppcode}
+
+如果项目名存在特殊情况，不能按照上述要求进行命名，则需要向集成团队发起审批申请，申请中注明原因。
+
+项目构建出的软件包的命名也应遵守项目命名的要求，但可以允许\texttt{`-`}超过2个。
 
 \section{文件命名} \label{deepin-file-naming}
 
